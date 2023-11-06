@@ -2,7 +2,9 @@ cmake_minimum_required(VERSION 3.0)
 
 project(editor)
 find_package(Curses REQUIRED)
-include_directories(${CURSES_INCLUDE_DIRS} headers)
+include_directories(${CURSES_INCLUDE_DIRS} include)
 
-add_executable(editor main.cpp class/File.cpp class/Terminal.cpp class/Input.cpp)
+file(GLOB SOURCES "src/*.cpp")
+
+add_executable(editor ${SOURCES})
 target_link_libraries(editor ${CURSES_LIBRARIES})

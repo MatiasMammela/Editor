@@ -1,13 +1,13 @@
 #pragma once
 
-#include <iostream>
-#include <ncurses.h>
 #include "File.h"
 #include "Terminal.h"
+#include <iostream>
+#include <ncurses.h>
+
 using namespace std;
 
-class Input
-{
+class Input {
 public:
     Input(File &file, Terminal &terminal);
     void handleInput();
@@ -17,4 +17,11 @@ public:
 private:
     File &file_;
     Terminal &terminal_;
+    void moveCursorLeft();
+    void moveCursorRight();
+    void moveCursorUp();
+    void moveCursorDown();
+    void deleteChar();
+    void insertChar(int input);
+    void newLine();
 };

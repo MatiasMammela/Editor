@@ -2,11 +2,11 @@
 
 #include <iostream>
 #include <ncurses.h>
+#include <sstream>
 
 using namespace std;
 
-class Terminal
-{
+class Terminal {
 public:
     WINDOW *editorWindow;
     WINDOW *hudWindow;

@@ -1,26 +1,24 @@
 #include "Terminal.h"
 
-void Terminal::clearScreen()
-{
+void Terminal::clearScreen() {
     clear();
     refresh();
 }
-Terminal::Terminal()
-{
+
+Terminal::Terminal() {
     initscr();
-    keypad(editorWindow, TRUE);
     editorWindow = newwin(LINES, COLS, 0, 0);
+    keypad(editorWindow, TRUE);
     wrefresh(editorWindow);
 }
-void Terminal::enableRawMode()
-{
+
+void Terminal::enableRawMode() {
     raw();
     keypad(stdscr, TRUE);
     noecho();
     cbreak();
 }
 
-void Terminal::disableRawMode()
-{
+void Terminal::disableRawMode() {
     endwin();
 }
