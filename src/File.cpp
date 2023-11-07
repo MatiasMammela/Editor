@@ -18,7 +18,18 @@ void File::openFile(string fileName) {
         createFile(fileName);
     }
     getFileContent(fileName);
+
+    FilePath = fileName;
 };
+
+void File::constructFileContent() {
+    fileContent = "";
+    for (int i = 0; i < textLines.size(); i++) {
+        fileContent += textLines[i];
+        fileContent += "\n";
+    }
+    std::cout << fileContent << std::endl;
+}
 
 void File::saveToFile(string data, string fileName) {
     ofstream outputFile(fileName);
@@ -40,9 +51,9 @@ bool File::checkFileExists(string fileName) {
         return false;
     }
 };
-
 void File::createFile(string fileName) {
     cout << "createFile" << endl;
+
     ofstream outputFile(fileName);
 };
 

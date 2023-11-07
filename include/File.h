@@ -17,6 +17,7 @@ public:
     void saveToFile(string data, string fileName);
     vector<string> textLines;
     const vector<string> &getTextLines() const;
+    void constructFileContent();
 
 private:
     bool checkFileExists(string fileName);

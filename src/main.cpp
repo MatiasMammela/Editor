@@ -2,16 +2,30 @@
 #include "Input.h"
 #include "Terminal.h"
 #include "ncurses.h"
+#include <csignal>
 #include <iostream>
 using namespace std;
+void sigintHandler(int signum) {
+    // varataan ctrl+c kopiointiin
+    // ctrl + q lopettaa ohjelman
+}
+void renderEditor(Terminal &terminal, File &file) {
+    wclear(terminal.editorWindow);
 
+    for (int i = 0; i < file.textLines.size(); i++) {
+        wprintw(terminal.editorWindow, file.textLines[i].c_str());
+        wprintw(terminal.editorWindow, "\n");
+    }
+
+    wrefresh(terminal.editorWindow);
+}
 int main(int argc, char *argv[]) {
     if (argc != 2) {
-        cout << ("Usage: %s <filename>", argv[0]);
+        cout << "Usage: " << argv[0] << " <filename>";
         getch();
         return 1;
     }
-
+    signal(SIGINT, sigintHandler);
     string filename = argv[1];
     File file;
     file.openFile(filename);
@@ -20,16 +34,13 @@ int main(int argc, char *argv[]) {
     terminal.enableRawMode();
     terminal.clearScreen();
     wclear(terminal.editorWindow);
-
     Input input(file, terminal);
 
-    for (int i = 0; i < file.textLines.size(); i++) {
-        wprintw(terminal.editorWindow, file.textLines[i].c_str());
-        wprintw(terminal.editorWindow, "\n");
-    }
+    renderEditor(terminal, file);
 
     while (true) {
         input.handleInput();
+        renderEditor(terminal, file);
     }
 
     terminal.disableRawMode();

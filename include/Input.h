@@ -11,6 +11,7 @@ class Input {
 public:
     Input(File &file, Terminal &terminal);
     void handleInput();
+    string copiedLine;
     int cursorY;
     int cursorX;
 
@@ -24,4 +25,5 @@ private:
     void deleteChar();
     void insertChar(int input);
     void newLine();
+    void JoinLines();
 };
