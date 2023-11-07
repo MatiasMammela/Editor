@@ -26,8 +26,12 @@ void File::constructFileContent() {
     fileContent = "";
     for (int i = 0; i < textLines.size(); i++) {
         fileContent += textLines[i];
-        fileContent += "\n";
+        // fileContent += "\n";
+        if (i != textLines.size() - 1) {
+            fileContent += "\n";
+        }
     }
+
     std::cout << fileContent << std::endl;
 }
 
@@ -74,6 +78,9 @@ vector<string> File::splitLines(const string &content) {
     string line;
     while (getline(iss, line)) {
         lines.push_back(line);
+    }
+    if (content.back() == '\n') {
+        lines.push_back("");
     }
     return lines;
 };
