@@ -10,6 +10,7 @@ void Input::handleInput() {
     wmove(terminal_.editorWindow, cursorY, cursorX);
     wrefresh(terminal_.editorWindow);
     int input = getch();
+    // mvprintw(0,0, "Input: %d", input);
     switch (input) {
     case KEY_LEFT:
         moveCursorLeft();
@@ -38,16 +39,16 @@ void Input::handleInput() {
         file_.constructFileContent();
         file_.saveToFile(file_.fileContent, file_.FilePath);
         break;
-    // ctrl + q
+    // ctrl + k
     case 11:
         if (cursorY >= 0 && cursorY < file_.textLines.size()) {
-            if (!file_.textLines[cursorY].empty()) {
-                string deletedLine = file_.textLines[cursorY];
+            if (!file_.textLines[cursorY+terminal_.offset].empty()) {
+                string deletedLine = file_.textLines[cursorY+terminal_.offset];
 
                 wmove(terminal_.editorWindow, cursorY, 0);
                 wclrtoeol(terminal_.editorWindow);
 
-                file_.textLines.erase(file_.textLines.begin() + cursorY);
+                file_.textLines.erase(file_.textLines.begin() + cursorY+terminal_.offset);
 
                 if (cursorY >= file_.textLines.size()) {
                     cursorY = file_.textLines.size() - 1;
@@ -61,14 +62,15 @@ void Input::handleInput() {
             }
         }
         break;
-    // ctrl + k
+    // ctrl + q
     case 17:
         terminal_.disableRawMode();
         exit(0);
         break;
     // ctrl + c
     case 3:
-        copiedLine = file_.textLines[cursorY];
+        copiedLine = file_.textLines[cursorY+terminal_.offset];
+        // mvprintw(0, 0, "Copied Line: %s", copiedLine.c_str());
         break;
     // ctrl + v
     case 22:
@@ -76,6 +78,8 @@ void Input::handleInput() {
             file_.textLines.insert(file_.textLines.begin() + cursorY + 1, copiedLine);
             moveCursorDown();
             cursorX = 0;
+        } else {
+            mvprintw(0, 0, "Nothing to paste!");
         }
         break;
     // ctrl + h
@@ -107,46 +111,57 @@ void Input::moveCursorLeft() {
     } else {
         if (cursorY > 0) {
             cursorY--;
-            cursorX = file_.textLines[cursorY].length();
+            cursorX = file_.textLines[cursorY+terminal_.offset].length();
         }
     }
 }
 
 void Input::moveCursorRight() {
-    if (cursorX < file_.textLines[cursorY].length()) {
+    if (cursorX < file_.textLines[cursorY+terminal_.offset].length()) {
         cursorX++;
     }
 }
 void Input::JoinLines() {
-    string currentLine = file_.textLines[cursorY];
-    file_.textLines.erase(file_.textLines.begin() + cursorY);
+    string currentLine = file_.textLines[cursorY+terminal_.offset];
+    file_.textLines.erase(file_.textLines.begin() + cursorY+terminal_.offset);
     cursorY--;
-    cursorX = file_.textLines[cursorY].length();
-    file_.textLines[cursorY] += currentLine;
+    cursorX = file_.textLines[cursorY+terminal_.offset].length();
+    file_.textLines[cursorY+terminal_.offset] += currentLine;
 }
 
 void Input::moveCursorUp() {
     if (cursorY > 0) {
         cursorY--;
-        if (cursorX > file_.textLines[cursorY].length()) {
-            cursorX = file_.textLines[cursorY].length();
+        if (cursorX > file_.textLines[cursorY+terminal_.offset].length()) {
+            cursorX = file_.textLines[cursorY+terminal_.offset].length();
         }
     }
+
+    if (cursorY == 0 && terminal_.offset > 0) {
+        terminal_.offset--;
+    }
+
 }
 
 void Input::moveCursorDown() {
-    if (cursorY < file_.textLines.size() - 1) {
+    if (cursorY+terminal_.offset < file_.textLines.size() - 1) {
         cursorY++;
-        if (cursorX > file_.textLines[cursorY].length()) {
-            cursorX = file_.textLines[cursorY].length();
+        if (cursorX > file_.textLines[cursorY+terminal_.offset].length()) {
+            cursorX = file_.textLines[cursorY+terminal_.offset].length();
+        }
+
+        if (cursorY == LINES - 1 && cursorY + terminal_.offset < file_.textLines.size()) {
+            terminal_.offset++;
+            cursorY--;
         }
     }
+
 }
 
 void Input::deleteChar() {
     if (cursorX > 0) {
         mvwdelch(terminal_.editorWindow, cursorY, cursorX);
-        file_.textLines[cursorY].erase(cursorX - 1, 1);
+        file_.textLines[cursorY+terminal_.offset].erase(cursorX - 1, 1);
         moveCursorLeft();
     }
 }
@@ -157,15 +172,15 @@ void Input::insertChar(int input) {
         cursorY = file_.textLines.size() - 1;
         cursorX = 1;
     } else {
-        winsch(terminal_.editorWindow, input);
-        file_.textLines[cursorY].insert(cursorX, 1, input);
+        // winsch(terminal_.editorWindow, input);
+        file_.textLines[cursorY+terminal_.offset].insert(cursorX, 1, input);
         moveCursorRight();
     }
 }
 void Input::newLine() {
-    string currentLine = file_.textLines[cursorY].substr(cursorX);
-    file_.textLines[cursorY].erase(cursorX);
-    file_.textLines.insert(file_.textLines.begin() + cursorY + 1, currentLine);
+    string currentLine = file_.textLines[cursorY+terminal_.offset].substr(cursorX);
+    file_.textLines[cursorY+terminal_.offset].erase(cursorX);
+    file_.textLines.insert(file_.textLines.begin() + cursorY+terminal_.offset + 1, currentLine);
     moveCursorDown();
     cursorX = 0;
 }

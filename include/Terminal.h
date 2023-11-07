@@ -14,4 +14,5 @@ public:
     void enableRawMode();
     void disableRawMode();
     Terminal();
+    int offset = 0;
 };

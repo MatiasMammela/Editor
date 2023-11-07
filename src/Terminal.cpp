@@ -16,7 +16,7 @@ void Terminal::enableRawMode() {
     raw();
     keypad(stdscr, TRUE);
     noecho();
-    cbreak();
+    // cbreak();
 }
 
 void Terminal::disableRawMode() {

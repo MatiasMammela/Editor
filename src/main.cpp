@@ -12,9 +12,8 @@ void sigintHandler(int signum) {
 void renderEditor(Terminal &terminal, File &file) {
     wclear(terminal.editorWindow);
 
-    for (int i = 0; i < file.textLines.size(); i++) {
-        wprintw(terminal.editorWindow, file.textLines[i].c_str());
-        wprintw(terminal.editorWindow, "\n");
+    for (int i = terminal.offset; i < file.textLines.size(); i++) {
+        mvwprintw(terminal.editorWindow, i - terminal.offset, 0, file.textLines[i].c_str());
     }
 
     wrefresh(terminal.editorWindow);
@@ -25,7 +24,7 @@ int main(int argc, char *argv[]) {
         getch();
         return 1;
     }
-    signal(SIGINT, sigintHandler);
+    // signal(SIGINT, sigintHandler);
     string filename = argv[1];
     File file;
     file.openFile(filename);
