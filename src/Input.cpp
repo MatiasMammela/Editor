@@ -144,7 +144,7 @@ void Input::moveCursorUp() {
 
 void Input::moveCursorDown() {
     if (cursorY + terminal_.offset < file_.textLines.size() - 1) {
-
+        cursorY++;
         if (cursorX > file_.textLines[cursorY + terminal_.offset].length()) {
             cursorX = file_.textLines[cursorY + terminal_.offset].length();
         }
@@ -153,7 +153,6 @@ void Input::moveCursorDown() {
             terminal_.offset++;
             cursorY--;
         }
-        cursorY++;
     }
 }
 
