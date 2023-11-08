@@ -1,5 +1,6 @@
 #include "File.h"
 #include "Input.h"
+#include "Syntax.h"
 #include "Terminal.h"
 #include "ncurses.h"
 #include <csignal>
@@ -9,15 +10,17 @@ void sigintHandler(int signum) {
     // varataan ctrl+c kopiointiin
     // ctrl + q lopettaa ohjelman
 }
-void renderEditor(Terminal &terminal, File &file) {
+void renderEditor(Terminal &terminal, File &file, Syntax &syntax) {
     wclear(terminal.editorWindow);
-
     for (int i = terminal.offset; i < file.textLines.size(); i++) {
-        mvwprintw(terminal.editorWindow, i - terminal.offset, 0, file.textLines[i].c_str());
+
+        string line = file.textLines[i];
+        syntax.drawSyntaxHighlighting(terminal.editorWindow, i - terminal.offset, 0, line);
     }
 
     wrefresh(terminal.editorWindow);
 }
+
 int main(int argc, char *argv[]) {
     if (argc != 2) {
         cout << "Usage: " << argv[0] << " <filename>";
@@ -34,12 +37,12 @@ int main(int argc, char *argv[]) {
     terminal.clearScreen();
     wclear(terminal.editorWindow);
     Input input(file, terminal);
-
-    renderEditor(terminal, file);
+    Syntax syntax;
+    renderEditor(terminal, file, syntax);
 
     while (true) {
         input.handleInput();
-        renderEditor(terminal, file);
+        renderEditor(terminal, file, syntax);
     }
 
     terminal.disableRawMode();

@@ -42,13 +42,13 @@ void Input::handleInput() {
     // ctrl + k
     case 11:
         if (cursorY >= 0 && cursorY < file_.textLines.size()) {
-            if (!file_.textLines[cursorY+terminal_.offset].empty()) {
-                string deletedLine = file_.textLines[cursorY+terminal_.offset];
+            if (!file_.textLines[cursorY + terminal_.offset].empty()) {
+                string deletedLine = file_.textLines[cursorY + terminal_.offset];
 
                 wmove(terminal_.editorWindow, cursorY, 0);
                 wclrtoeol(terminal_.editorWindow);
 
-                file_.textLines.erase(file_.textLines.begin() + cursorY+terminal_.offset);
+                file_.textLines.erase(file_.textLines.begin() + cursorY + terminal_.offset);
 
                 if (cursorY >= file_.textLines.size()) {
                     cursorY = file_.textLines.size() - 1;
@@ -69,7 +69,7 @@ void Input::handleInput() {
         break;
     // ctrl + c
     case 3:
-        copiedLine = file_.textLines[cursorY+terminal_.offset];
+        copiedLine = file_.textLines[cursorY + terminal_.offset];
         // mvprintw(0, 0, "Copied Line: %s", copiedLine.c_str());
         break;
     // ctrl + v
@@ -111,60 +111,56 @@ void Input::moveCursorLeft() {
     } else {
         if (cursorY > 0) {
             cursorY--;
-            cursorX = file_.textLines[cursorY+terminal_.offset].length();
+            cursorX = file_.textLines[cursorY + terminal_.offset].length();
         }
     }
 }
 
 void Input::moveCursorRight() {
-    if (cursorX < file_.textLines[cursorY+terminal_.offset].length()) {
+    if (cursorX < file_.textLines[cursorY + terminal_.offset].length()) {
         cursorX++;
     }
 }
 void Input::JoinLines() {
-    string currentLine = file_.textLines[cursorY+terminal_.offset];
-    file_.textLines.erase(file_.textLines.begin() + cursorY+terminal_.offset);
+    string currentLine = file_.textLines[cursorY + terminal_.offset];
+    file_.textLines.erase(file_.textLines.begin() + cursorY + terminal_.offset);
     cursorY--;
-    cursorX = file_.textLines[cursorY+terminal_.offset].length();
-    file_.textLines[cursorY+terminal_.offset] += currentLine;
+    cursorX = file_.textLines[cursorY + terminal_.offset].length();
+    file_.textLines[cursorY + terminal_.offset] += currentLine;
 }
 
 void Input::moveCursorUp() {
     if (cursorY > 0) {
         cursorY--;
-        if (cursorX > file_.textLines[cursorY+terminal_.offset].length()) {
-            cursorX = file_.textLines[cursorY+terminal_.offset].length();
+        if (cursorX > file_.textLines[cursorY + terminal_.offset].length()) {
+            cursorX = file_.textLines[cursorY + terminal_.offset].length();
         }
     }
 
     if (cursorY == 0 && terminal_.offset > 0) {
         terminal_.offset--;
     }
-
 }
 
 void Input::moveCursorDown() {
-    if (cursorY+terminal_.offset < file_.textLines.size()-1) {
-        
-        if (cursorX > file_.textLines[cursorY+terminal_.offset].length()) {
-            cursorX = file_.textLines[cursorY+terminal_.offset].length();
+    if (cursorY + terminal_.offset < file_.textLines.size() - 1) {
+
+        if (cursorX > file_.textLines[cursorY + terminal_.offset].length()) {
+            cursorX = file_.textLines[cursorY + terminal_.offset].length();
         }
 
         if (cursorY == LINES - 1 && cursorY + terminal_.offset < file_.textLines.size()) {
             terminal_.offset++;
             cursorY--;
-
         }
         cursorY++;
-
     }
-
 }
 
 void Input::deleteChar() {
     if (cursorX > 0) {
         mvwdelch(terminal_.editorWindow, cursorY, cursorX);
-        file_.textLines[cursorY+terminal_.offset].erase(cursorX - 1, 1);
+        file_.textLines[cursorY + terminal_.offset].erase(cursorX - 1, 1);
         moveCursorLeft();
     }
 }
@@ -175,9 +171,9 @@ void Input::insertChar(int input) {
 }
 
 void Input::newLine() {
-    string currentLine = file_.textLines[cursorY+terminal_.offset].substr(cursorX);
-    file_.textLines[cursorY+terminal_.offset].erase(cursorX);
-    file_.textLines.insert(file_.textLines.begin() + cursorY+terminal_.offset + 1, currentLine);
+    string currentLine = file_.textLines[cursorY + terminal_.offset].substr(cursorX);
+    file_.textLines[cursorY + terminal_.offset].erase(cursorX);
+    file_.textLines.insert(file_.textLines.begin() + cursorY + terminal_.offset + 1, currentLine);
     moveCursorDown();
     cursorX = 0;
 }
