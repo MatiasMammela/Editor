@@ -31,8 +31,6 @@ void File::constructFileContent() {
             fileContent += "\n";
         }
     }
-
-    std::cout << fileContent << std::endl;
 }
 
 void File::saveToFile(string data, string fileName) {

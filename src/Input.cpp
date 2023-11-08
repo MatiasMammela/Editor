@@ -57,8 +57,6 @@ void Input::handleInput() {
                 cursorX = 0;
 
                 wrefresh(terminal_.editorWindow);
-
-                std::cout << "Deleted Line: " << deletedLine << std::endl;
             }
         }
         break;
@@ -70,7 +68,6 @@ void Input::handleInput() {
     // ctrl + c
     case 3:
         copiedLine = file_.textLines[cursorY + terminal_.offset];
-        // mvprintw(0, 0, "Copied Line: %s", copiedLine.c_str());
         break;
     // ctrl + v
     case 22:
