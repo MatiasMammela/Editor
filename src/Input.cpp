@@ -69,6 +69,22 @@ void Input::handleInput() {
     case 3:
         copiedLine = file_.textLines[cursorY + terminal_.offset];
         break;
+    // ctrl + f
+    case 6:
+        attron(A_REVERSE); // Turn on reverse attribute for background color
+        mvprintw(0, 0, "Search: ");
+
+        echo();
+        wmove(terminal_.editorWindow, 0, 8); // Adjust the cursor position to leave space for the prompt
+        // init searchWord
+        searchWord = "";
+        getstr(&searchWord[0]); // Pass the char* from the std::string
+        noecho();
+        attroff(A_REVERSE); // Turn off reverse attribute
+        terminal_.clearScreen();
+        findWord();
+        break;
+
     // ctrl + v
     case 22:
         if (!copiedLine.empty()) {
@@ -91,6 +107,7 @@ void Input::handleInput() {
         mvwprintw(terminal_.hudWindow, 4, 1, "Ctrl + K: Delete line");
         mvwprintw(terminal_.hudWindow, 5, 1, "Ctrl + C: Copy line");
         mvwprintw(terminal_.hudWindow, 6, 1, "Ctrl + V: Paste line");
+        mvwprintw(terminal_.hudWindow, 7, 1, "Ctrl + F: Find word");
         wrefresh(terminal_.hudWindow);
         getch();
         terminal_.clearScreen();
@@ -101,7 +118,16 @@ void Input::handleInput() {
     }
     wrefresh(terminal_.editorWindow);
 }
-
+void Input::findWord() {
+    for (int i = 0; i < file_.textLines.size(); i++) {
+        if (strstr(file_.textLines[i].c_str(), searchWord.c_str()) != nullptr) {
+            terminal_.offset = i;
+            cursorY = i - terminal_.offset;
+            cursorX = file_.textLines[i].find(searchWord.c_str());
+            break;
+        }
+    }
+}
 void Input::moveCursorLeft() {
     if (cursorX > 0) {
         cursorX--;

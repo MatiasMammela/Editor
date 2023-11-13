@@ -2,9 +2,9 @@
 
 #include "File.h"
 #include "Terminal.h"
+#include <cstring>
 #include <iostream>
 #include <ncurses.h>
-
 using namespace std;
 
 class Input {
@@ -14,6 +14,7 @@ public:
     string copiedLine;
     int cursorY;
     int cursorX;
+    string searchWord;
 
 private:
     File &file_;
@@ -26,4 +27,5 @@ private:
     void insertChar(int input);
     void newLine();
     void JoinLines();
+    void findWord();
 };
