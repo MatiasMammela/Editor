@@ -9,6 +9,7 @@ using namespace std;
 
 class Input {
 public:
+    int findWordIndex = 0;
     Input(File &file, Terminal &terminal);
     void handleInput();
     string copiedLine;

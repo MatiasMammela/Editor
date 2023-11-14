@@ -11,10 +11,11 @@ public:
     WINDOW *editorWindow;
     WINDOW *hudWindow;
     WINDOW *lineNumbersWindow;
-    void renderLineNumbers(int totalLines);
+    void drawLineNumbers(int offset);
     void clearScreen();
+    void drawWindow(int maxLines);
     void enableRawMode();
     void disableRawMode();
-    Terminal();
+    Terminal(int maxLines);
     int offset = 0;
 };

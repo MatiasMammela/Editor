@@ -1,5 +1,0 @@
-void jee(){
-return jeejee huhuu
-lol
-XD
-}

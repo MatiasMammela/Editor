@@ -12,12 +12,15 @@ void sigintHandler(int signum) {
 }
 void renderEditor(Terminal &terminal, File &file, Syntax &syntax) {
     wclear(terminal.editorWindow);
+    wclear(terminal.lineNumbersWindow);
     for (int i = terminal.offset; i < file.textLines.size(); i++) {
 
         string line = file.textLines[i];
         syntax.drawSyntaxHighlighting(terminal.editorWindow, i - terminal.offset, 0, line);
     }
 
+    terminal.drawLineNumbers(terminal.offset);
+    wrefresh(terminal.lineNumbersWindow);
     wrefresh(terminal.editorWindow);
 }
 
@@ -31,8 +34,9 @@ int main(int argc, char *argv[]) {
     string filename = argv[1];
     File file;
     file.openFile(filename);
-
-    Terminal terminal;
+    start_color();
+    init_pair(1, COLOR_WHITE, COLOR_BLUE);
+    Terminal terminal(file.textLines.size());
     terminal.enableRawMode();
     terminal.clearScreen();
     wclear(terminal.editorWindow);

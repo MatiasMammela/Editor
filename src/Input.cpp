@@ -14,15 +14,19 @@ void Input::handleInput() {
     switch (input) {
     case KEY_LEFT:
         moveCursorLeft();
+        findWordIndex = 0;
         break;
     case KEY_RIGHT:
         moveCursorRight();
+        findWordIndex = 0;
         break;
     case KEY_UP:
         moveCursorUp();
+        findWordIndex = 0;
         break;
     case KEY_DOWN:
         moveCursorDown();
+        findWordIndex = 0;
         break;
     case KEY_BACKSPACE:
         if (cursorX == 0 && cursorY > 0) {
@@ -32,7 +36,12 @@ void Input::handleInput() {
         }
         break;
     case '\n':
-        newLine();
+
+        if (findWordIndex != 0) {
+            findWord();
+        } else {
+            newLine();
+        }
         break;
     // ctrl + s
     case 19:
@@ -71,16 +80,16 @@ void Input::handleInput() {
         break;
     // ctrl + f
     case 6:
-        attron(A_REVERSE); // Turn on reverse attribute for background color
+        findWordIndex = 0;
+        attron(A_REVERSE);
         mvprintw(0, 0, "Search: ");
-
         echo();
-        wmove(terminal_.editorWindow, 0, 8); // Adjust the cursor position to leave space for the prompt
-        // init searchWord
+        wmove(terminal_.editorWindow, 0, 8);
+
         searchWord = "";
-        getstr(&searchWord[0]); // Pass the char* from the std::string
+        getstr(&searchWord[0]);
         noecho();
-        attroff(A_REVERSE); // Turn off reverse attribute
+        attroff(A_REVERSE);
         terminal_.clearScreen();
         findWord();
         break;
@@ -107,24 +116,31 @@ void Input::handleInput() {
         mvwprintw(terminal_.hudWindow, 4, 1, "Ctrl + K: Delete line");
         mvwprintw(terminal_.hudWindow, 5, 1, "Ctrl + C: Copy line");
         mvwprintw(terminal_.hudWindow, 6, 1, "Ctrl + V: Paste line");
-        mvwprintw(terminal_.hudWindow, 7, 1, "Ctrl + F: Find word");
+        mvwprintw(terminal_.hudWindow, 7, 1, "Ctrl + F: Find word / ENTER: Find next");
         wrefresh(terminal_.hudWindow);
         getch();
         terminal_.clearScreen();
         break;
     default:
         insertChar(input);
+        findWordIndex = 0;
         break;
     }
     wrefresh(terminal_.editorWindow);
 }
+
 void Input::findWord() {
-    for (int i = 0; i < file_.textLines.size(); i++) {
+    int i = findWordIndex;
+    for (i; i < file_.textLines.size(); i++) {
         if (strstr(file_.textLines[i].c_str(), searchWord.c_str()) != nullptr) {
             terminal_.offset = i;
             cursorY = i - terminal_.offset;
             cursorX = file_.textLines[i].find(searchWord.c_str());
+            findWordIndex = i + 1;
             break;
+        }
+        if (i == file_.textLines.size() - 1) {
+            findWordIndex = 0;
         }
     }
 }
