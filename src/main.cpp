@@ -34,8 +34,6 @@ int main(int argc, char *argv[]) {
     string filename = argv[1];
     File file;
     file.openFile(filename);
-    start_color();
-    init_pair(1, COLOR_WHITE, COLOR_BLUE);
     Terminal terminal(file.textLines.size());
     terminal.enableRawMode();
     terminal.clearScreen();
