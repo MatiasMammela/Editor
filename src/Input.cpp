@@ -29,7 +29,7 @@ void Input::handleInput() {
         findWordIndex = 0;
         break;
     case KEY_BACKSPACE:
-        if (cursorX == 0 && cursorY > 0) {
+        if (cursorX == 0 && cursorY + terminal_.offset > 0) {
             JoinLines();
         } else {
             deleteChar();
@@ -145,17 +145,26 @@ void Input::findWord() {
     }
 }
 void Input::moveCursorLeft() {
-    if (file_.textLines.empty()) {
-        file_.textLines.push_back("");
-    }
+    ifFileEmpty();
+
+
+
+
     if (cursorX > 0) {
         cursorX--;
     } else {
+        if (cursorY < terminal_.offset) {
+            terminal_.offset--;
+            cursorX = file_.textLines[cursorY + terminal_.offset].length();
+
+        }
         if (cursorY > 0) {
             cursorY--;
             cursorX = file_.textLines[cursorY + terminal_.offset].length();
         }
     }
+
+
 }
 
 void Input::ifFileEmpty() {
@@ -167,20 +176,30 @@ void Input::ifFileEmpty() {
 void Input::moveCursorRight() {
     ifFileEmpty();
 
-    if (cursorX < file_.textLines[cursorY + terminal_.offset].length()) {
+   if (cursorX < file_.textLines[cursorY + terminal_.offset].length()) {
         cursorX++;
+    } else {
+        if (cursorY + terminal_.offset < file_.textLines.size() - 1) {
+            moveCursorDown();
+            cursorX = 0;
+        }
     }
 }
 void Input::JoinLines() {
     string currentLine = file_.textLines[cursorY + terminal_.offset];
     file_.textLines.erase(file_.textLines.begin() + cursorY + terminal_.offset);
-    cursorY--;
+    moveCursorUp();
     cursorX = file_.textLines[cursorY + terminal_.offset].length();
     file_.textLines[cursorY + terminal_.offset] += currentLine;
 }
 
 void Input::moveCursorUp() {
     ifFileEmpty();
+
+    if (cursorY == 0 && terminal_.offset > 0) {
+        terminal_.offset--;
+    }
+
     if (cursorY > 0) {
         cursorY--;
         if (cursorX > file_.textLines[cursorY + terminal_.offset].length()) {
@@ -188,23 +207,23 @@ void Input::moveCursorUp() {
         }
     }
 
-    if (cursorY == 0 && terminal_.offset > 0) {
-        terminal_.offset--;
-    }
+
 }
 
 void Input::moveCursorDown() {
     ifFileEmpty();
     if (cursorY + terminal_.offset < file_.textLines.size() - 1) {
+        if (cursorY == LINES - 1 && cursorY + terminal_.offset < file_.textLines.size()) {
+            terminal_.offset++;
+            cursorY--;
+        }
+
         cursorY++;
         if (cursorX > file_.textLines[cursorY + terminal_.offset].length()) {
             cursorX = file_.textLines[cursorY + terminal_.offset].length();
         }
 
-        if (cursorY == LINES - 1 && cursorY + terminal_.offset < file_.textLines.size()) {
-            terminal_.offset++;
-            cursorY--;
-        }
+
     }
 }
 
