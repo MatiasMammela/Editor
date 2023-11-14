@@ -29,4 +29,5 @@ private:
     void newLine();
     void JoinLines();
     void findWord();
+    void ifFileEmpty();
 };

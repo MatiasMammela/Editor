@@ -145,6 +145,9 @@ void Input::findWord() {
     }
 }
 void Input::moveCursorLeft() {
+    if (file_.textLines.empty()) {
+        file_.textLines.push_back("");
+    }
     if (cursorX > 0) {
         cursorX--;
     } else {
@@ -155,7 +158,15 @@ void Input::moveCursorLeft() {
     }
 }
 
+void Input::ifFileEmpty() {
+    if (file_.textLines.empty()) {
+        file_.textLines.push_back("");
+    }
+}
+
 void Input::moveCursorRight() {
+    ifFileEmpty();
+
     if (cursorX < file_.textLines[cursorY + terminal_.offset].length()) {
         cursorX++;
     }
@@ -169,6 +180,7 @@ void Input::JoinLines() {
 }
 
 void Input::moveCursorUp() {
+    ifFileEmpty();
     if (cursorY > 0) {
         cursorY--;
         if (cursorX > file_.textLines[cursorY + terminal_.offset].length()) {
@@ -182,6 +194,7 @@ void Input::moveCursorUp() {
 }
 
 void Input::moveCursorDown() {
+    ifFileEmpty();
     if (cursorY + terminal_.offset < file_.textLines.size() - 1) {
         cursorY++;
         if (cursorX > file_.textLines[cursorY + terminal_.offset].length()) {
@@ -204,11 +217,13 @@ void Input::deleteChar() {
 }
 
 void Input::insertChar(int input) {
+    ifFileEmpty();
     file_.textLines[cursorY + terminal_.offset].insert(cursorX, 1, input);
     moveCursorRight();
 }
 
 void Input::newLine() {
+    ifFileEmpty();
     string currentLine = file_.textLines[cursorY + terminal_.offset].substr(cursorX);
     file_.textLines[cursorY + terminal_.offset].erase(cursorX);
     file_.textLines.insert(file_.textLines.begin() + cursorY + terminal_.offset + 1, currentLine);
