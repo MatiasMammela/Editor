@@ -1,4 +1,4 @@
-#include "gui/MainWindow.h"
+#include "MainWindow.h"
 
 int main(int argc, char *argv[]) {
     auto app = Gtk::Application::create("org.gtkmm.example");
