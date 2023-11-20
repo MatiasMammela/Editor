@@ -13,11 +13,15 @@ target_link_libraries(editor_tui ${CURSES_LIBRARIES})
 
 # GUI version
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(GTKMM REQUIRED gtkmm-4.0)
-include_directories(${GTKMM_INCLUDE_DIRS} gui/include)
-link_directories(${GTKMM_LIBRARY_DIRS})
+pkg_check_modules(GTK4 REQUIRED gtk4)
+include_directories(${GTK4_INCLUDE_DIRS} gui/include)
+link_directories(${GTK4_LIBRARY_DIRS})
 
 file(GLOB GUI_SOURCES "gui/src/*.cpp")
 
+file(GLOB UI_FILES "gui/ui/*.ui")
+file(COPY ${UI_FILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
 add_executable(editor_gui ${GUI_SOURCES})
-target_link_libraries(editor_gui ${CURSES_LIBRARIES} ${GTKMM_LIBRARIES})
+target_link_libraries(editor_gui ${CURSES_LIBRARIES} ${GTK4_LIBRARIES})
+
