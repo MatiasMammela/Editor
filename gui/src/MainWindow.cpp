@@ -14,15 +14,20 @@ void MainWindow::on_activate(GtkApplication *app, gpointer user_data) {
     MainWindow *mainWindow = static_cast<MainWindow *>(user_data);
 
     mainWindow->builder = gtk_builder_new();
-    gtk_builder_add_from_file(mainWindow->builder, "builder.ui", NULL);
+    if (!gtk_builder_add_from_file(mainWindow->builder, "builder.ui", nullptr)) {
+        g_printerr("Error loading UI file\n");
+        g_object_unref(mainWindow->builder);
+        return;
+    }
 
-    mainWindow->window = gtk_builder_get_object(mainWindow->builder, "window");
+    mainWindow->window = GTK_WINDOW(gtk_builder_get_object(mainWindow->builder, "window"));
+    mainWindow->grid = GTK_GRID(gtk_builder_get_object(mainWindow->builder, "grid"));
+    mainWindow->button = GTK_BUTTON(gtk_builder_get_object(mainWindow->builder, "button1"));
 
-    mainWindow->button = gtk_builder_get_object (mainWindow->builder, "button1");
-    g_signal_connect (mainWindow->button, "clicked", G_CALLBACK (print_hello), NULL);
+    gtk_window_set_title(mainWindow->window, "Your Title");
 
+    gtk_window_set_application(mainWindow->window, app);
 
-    gtk_window_set_application(GTK_WINDOW(mainWindow->window), app);
     gtk_widget_set_visible(GTK_WIDGET(mainWindow->window), TRUE);
 
     g_object_unref(mainWindow->builder);
