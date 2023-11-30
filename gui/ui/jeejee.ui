@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <object id="window" class="GtkWindow">
+    <property name="title">moi</property>
+    <property name="default-width">400</property>
+    <property name="default-height">500</property>
+    <menu action="menu1">
+      <menuitem action="menuitem1"/>
+      <menuitem action="menuitem2"/>
+      <menuitem action="menuitem3"/>
+    </menu>
+  </object>
+  
+</interface>

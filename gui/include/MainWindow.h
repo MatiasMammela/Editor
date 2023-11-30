@@ -8,13 +8,12 @@ public:
 
 private:
     static void on_activate(GtkApplication *app, gpointer user_data);
-    static void print_hello(GtkWidget *widget, gpointer user_data);
-
+    static void open_activated(GSimpleAction *action, GVariant *parameter, gpointer user_data);
+    static void dialog_response(GtkDialog *dialog, gint response_id, gpointer user_data);
     GtkApplication *application;
-    GtkWindow *window;
-    GtkButton *button;
-    GtkHeaderBar *headerbar;
-    GtkGrid *grid;
-    GtkWidget *button_box;
+    static MainWindow *self;
+    GtkApplicationWindow *window;
+    char *get_filename(GtkListItem *item, GFileInfo *info);
+    GMenuModel *menu;
     GtkBuilder *builder;
 };
