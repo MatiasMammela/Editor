@@ -28,6 +28,10 @@
         <attribute name="label">Open</attribute>
         <attribute name="action">app.open</attribute>
       </item>
+      <item>
+        <attribute name="label">Save</attribute>
+        <attribute name="action">app.save</attribute>
+      </item>
     </submenu>
   </menu>
 </interface>
