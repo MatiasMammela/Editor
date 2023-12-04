@@ -15,10 +15,7 @@
           </object>
         </child>
         <child>
-          <object class="GtkNotebook">
-            <child>
-              <object class="GtkTextView"/>
-            </child>
+          <object id="notebook" class="GtkNotebook">
           </object>
         </child>
       </object>
