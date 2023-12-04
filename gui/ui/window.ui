@@ -32,6 +32,10 @@
         <attribute name="label">Save</attribute>
         <attribute name="action">app.save</attribute>
       </item>
+      <item>
+        <attribute name="label">Save as</attribute>
+        <attribute name="action">app.saveas</attribute>
+      </item>
     </submenu>
   </menu>
 </interface>
