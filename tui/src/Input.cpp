@@ -53,15 +53,17 @@ void Input::handleInput() {
         if (cursorY >= 0 && cursorY < file_.textLines.size()) {
             if (!file_.textLines[cursorY + terminal_.offset].empty()) {
                 string deletedLine = file_.textLines[cursorY + terminal_.offset];
+                if (cursorY != 0) {
+                    wmove(terminal_.editorWindow, cursorY, 0);
+                }
 
-                wmove(terminal_.editorWindow, cursorY, 0);
                 wclrtoeol(terminal_.editorWindow);
 
                 file_.textLines.erase(file_.textLines.begin() + cursorY + terminal_.offset);
 
-                if (cursorY >= file_.textLines.size()) {
+                /*if (cursorY >= file_.textLines.size()) {
                     cursorY = file_.textLines.size() - 1;
-                }
+                }*/
 
                 cursorX = 0;
 
@@ -147,24 +149,18 @@ void Input::findWord() {
 void Input::moveCursorLeft() {
     ifFileEmpty();
 
-
-
-
     if (cursorX > 0) {
         cursorX--;
     } else {
         if (cursorY < terminal_.offset) {
             terminal_.offset--;
             cursorX = file_.textLines[cursorY + terminal_.offset].length();
-
         }
         if (cursorY > 0) {
             cursorY--;
             cursorX = file_.textLines[cursorY + terminal_.offset].length();
         }
     }
-
-
 }
 
 void Input::ifFileEmpty() {
@@ -176,7 +172,7 @@ void Input::ifFileEmpty() {
 void Input::moveCursorRight() {
     ifFileEmpty();
 
-   if (cursorX < file_.textLines[cursorY + terminal_.offset].length()) {
+    if (cursorX < file_.textLines[cursorY + terminal_.offset].length()) {
         cursorX++;
     } else {
         if (cursorY + terminal_.offset < file_.textLines.size() - 1) {
@@ -206,8 +202,6 @@ void Input::moveCursorUp() {
             cursorX = file_.textLines[cursorY + terminal_.offset].length();
         }
     }
-
-
 }
 
 void Input::moveCursorDown() {
@@ -222,8 +216,6 @@ void Input::moveCursorDown() {
         if (cursorX > file_.textLines[cursorY + terminal_.offset].length()) {
             cursorX = file_.textLines[cursorY + terminal_.offset].length();
         }
-
-
     }
 }
 
