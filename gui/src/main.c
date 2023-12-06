@@ -11,6 +11,13 @@ struct fileTab {
     GtkSourceBuffer *buffer;
 };
 extern GList *tabs;
+
+void remove_tab(GtkWidget *button, gpointer data) {
+    struct fileTab *tab = (struct fileTab *)data;
+    gint index = gtk_notebook_page_num(notebook, tab->scrolled_window);
+    gtk_notebook_remove_page(notebook, index);
+}
+
 static void open_file(GtkDialog *dialog, gint response_id, gpointer user_data) {
     if (response_id == GTK_RESPONSE_ACCEPT) {
         GFile *file = gtk_file_chooser_get_file(GTK_FILE_CHOOSER(dialog));
@@ -27,7 +34,20 @@ static void open_file(GtkDialog *dialog, gint response_id, gpointer user_data) {
             GtkWidget *scrolled_window = gtk_scrolled_window_new();
             gtk_widget_set_hexpand(scrolled_window, TRUE);
             gtk_widget_set_vexpand(scrolled_window, TRUE);
-            gtk_notebook_append_page(notebook, scrolled_window, gtk_label_new(g_path_get_basename(filePath)));
+
+            GtkWidget *close_button = gtk_button_new_from_icon_name("window-close-symbolic");
+            gtk_widget_set_margin_start(close_button, 5);
+            gtk_button_set_has_frame(GTK_BUTTON(close_button), FALSE);
+
+            GtkWidget *label = gtk_label_new(g_path_get_basename(filePath));
+            GtkWidget *hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+            gtk_box_append(GTK_BOX(hbox), label);
+            gtk_box_append(GTK_BOX(hbox), close_button);
+
+            gtk_notebook_append_page(GTK_NOTEBOOK(notebook), scrolled_window, hbox);
+
+            g_signal_connect(close_button, "clicked", G_CALLBACK(remove_tab), tab);
+
             tab->scrolled_window = scrolled_window;
 
             GtkSourceLanguageManager *language_manager = gtk_source_language_manager_new();
@@ -61,6 +81,7 @@ static void open_file(GtkDialog *dialog, gint response_id, gpointer user_data) {
         }
     }
 }
+
 static void save_file(GSimpleAction *action, GVariant *parameter, gpointer user_data) {
     gint current_tab = gtk_notebook_get_current_page(notebook);
     struct fileTab *tab = g_list_nth_data(tabs, current_tab);
