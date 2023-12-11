@@ -16,6 +16,7 @@ void remove_tab(GtkWidget *button, gpointer data) {
     struct fileTab *tab = (struct fileTab *)data;
     gint index = gtk_notebook_page_num(notebook, tab->scrolled_window);
     gtk_notebook_remove_page(notebook, index);
+    tabs = g_list_remove(tabs, tab);
 }
 
 static void open_file(GtkDialog *dialog, gint response_id, gpointer user_data) {
@@ -76,10 +77,10 @@ static void open_file(GtkDialog *dialog, gint response_id, gpointer user_data) {
 
             // set sourceview to scrolled window
             gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scrolled_window), source_view);
-            // close the dialog
-            gtk_window_close(GTK_WINDOW(dialog));
+
         }
     }
+    gtk_window_close(GTK_WINDOW(dialog));
 }
 
 static void save_file(GSimpleAction *action, GVariant *parameter, gpointer user_data) {
