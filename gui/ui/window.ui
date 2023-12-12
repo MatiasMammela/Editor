@@ -1,10 +1,11 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!-- Created with Cambalache 0.17.0 -->
 <interface>
-  <requires lib="gtk" version="4.0"/>
-  <requires lib="gio" version="2.0"/>
+  <requires lib="gtk" version="4.0" />
+  <requires lib="gio" version="2.0" />
 
-  <!--MAIN WINDOW-->
+  <!--MAIN
+  WINDOW-->
   <object class="GtkApplicationWindow" id="window">
     <property name="default-height">500</property>
     <property name="default-width">500</property>
@@ -25,7 +26,7 @@
   </object>
 
 
-<!--MENUBAR-->
+  <!--MENUBAR-->
   <menu id="menubar">
     <submenu>
       <attribute name="label">File</attribute>
@@ -46,7 +47,7 @@
         <attribute name="action">app.saveas</attribute>
       </item>
     </submenu>
-        <submenu>
+    <submenu>
       <attribute name="label">Options</attribute>
       <item>
         <attribute name="label">Preferences</attribute>
@@ -56,32 +57,47 @@
   </menu>
 
 
-<!--PREFERENCES WINDOW-->
-<object class="GtkDialog" id="preferences_dialog">
-  <child>
-    <object class="GtkGrid">
-      <!-- Dropdown goes in row 0, column 0 -->
-      <child>
-        <object class="GtkDropDown" id="scheme_dropdown">
-          <property name="model">
-            <object class="GtkStringList" id="scheme_list">
-            </object>
-          </property>
-        </object>
-      </child>
-      <!-- Button goes in row 1, column 0 -->
-      <child>
-        <object class="GtkButton" id="ok_button">
-          <property name="label">Ok</property>
-          <property name="action-name">app.preferences.ok</property>
-        </object>
-      </child>
-    </object>
-  </child>
-</object>
+  <!--PREFERENCES
+  WINDOW-->
+  <object class="GtkDialog" id="preferences_dialog">
+    <child>
+      <object class="GtkGrid">
+        <property name="column-spacing">5</property>
+        <property name="row-spacing">5</property>
+
+        <child>
+          <object class="GtkLabel" id="scheme_label">
+            <property name="label">Scheme</property>
+            <property name="hexpand">TRUE</property>
+          </object>
+        </child>
 
 
+        <child>
+          <object class="GtkDropDown" id="scheme_dropdown">
+            <property name="model">
+              <object class="GtkStringList" id="scheme_list">
+              </object>
+            </property>
+            <property name="hexpand">TRUE</property>
+          </object>
+        </child>
 
+        <child>
+          <object class="GtkButton" id="ok_button">
+            <property name="label">Ok</property>
+            <property name="action-name">app.preferences.ok</property>
+            <property name="hexpand">TRUE</property>
+            <layout>
+              <property name="column">1</property>
+              <property name="row">1</property>
+            </layout>
+          </object>
+
+        </child>
+      </object>
+    </child>
+  </object>
 
 
 </interface>

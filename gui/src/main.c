@@ -1,13 +1,16 @@
 #include <gtk/gtk.h>
 #include <gtksourceview/gtksource.h>
-
+#include <glib.h>
 static GtkNotebook *notebook;
 static GtkWindow *window;
 static GtkWindow *preferences_dialog;
 static GtkStringList *scheme_list;
 static GtkDropDown *scheme_dropdown;
 static GtkButton *ok_button;
-static char *theme;
+
+static gchar *selectedScheme = NULL;
+
+
 GList *tabs = NULL;
 struct fileTab {
     char *filePath;
@@ -17,6 +20,38 @@ struct fileTab {
     GtkWidget *label;
 };
 extern GList *tabs;
+
+const gchar *load_config() {
+    GKeyFile *keyfile = g_key_file_new();
+    gchar *configData = NULL;
+
+    if (g_file_get_contents("config.ini", &configData, NULL, NULL)) {
+        if (g_key_file_load_from_data(keyfile, configData, -1, G_KEY_FILE_NONE, NULL)) {
+            selectedScheme = g_key_file_get_string(keyfile, "Preferences", "SelectedScheme", NULL); 
+            g_free(configData);
+            g_key_file_free(keyfile);
+            return selectedScheme;
+        }
+    }
+
+    g_free(configData);
+    g_key_file_free(keyfile);
+    return NULL;
+}
+void save_config(const gchar *selectedScheme) {
+    GKeyFile *keyfile = g_key_file_new();
+    g_key_file_set_string(keyfile, "Preferences", "SelectedScheme", selectedScheme);
+
+    gchar *configData = g_key_file_to_data(keyfile, NULL, NULL);
+    g_file_set_contents("config.ini", configData, -1, NULL);
+
+    //load the config file
+    load_config();
+
+    g_free(configData);
+    g_key_file_free(keyfile);
+}
+
 
 void remove_tab(GtkWidget *button, gpointer data) {
     struct fileTab *tab = (struct fileTab *)data;
@@ -48,6 +83,9 @@ void new_notebook_page(char *filePath, char *contents, gsize length) {
     GtkSourceLanguageManager *language_manager = gtk_source_language_manager_new();
     GtkSourceLanguage *language = gtk_source_language_manager_guess_language(language_manager, filePath, NULL);
 
+
+
+
     if (language != NULL) {
         tab->buffer = gtk_source_buffer_new_with_language(language);
     } else {
@@ -63,12 +101,19 @@ void new_notebook_page(char *filePath, char *contents, gsize length) {
     tab->source_view = source_view;
     tab->scrolled_window = scrolled_window;
     tab->label = label;
+    
+    //set line numbers
+    gtk_source_view_set_show_line_numbers(GTK_SOURCE_VIEW(source_view), TRUE);
 
     // set sourceview to scrolled window
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scrolled_window), source_view);
 
     // append scrolled window to notebook
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook), scrolled_window, hbox);
+
+    //set the style scheme
+    GtkSourceStyleScheme *style_scheme = gtk_source_style_scheme_manager_get_scheme(gtk_source_style_scheme_manager_get_default(), selectedScheme);
+    gtk_source_buffer_set_style_scheme(tab->buffer, style_scheme);
 
     // append tab to list
     tabs = g_list_append(tabs, tab);
@@ -82,15 +127,12 @@ static void open_file(GtkDialog *dialog, gint response_id, gpointer user_data) {
         GFile *file = gtk_file_chooser_get_file(GTK_FILE_CHOOSER(dialog));
         char *filePath = g_file_get_path(file);
 
-        GtkSettings *settings = gtk_settings_get_default();
-        g_object_set(settings, "gtk-application-prefer-dark-theme", TRUE, NULL);
 
         GError *error = NULL;
         char *contents = NULL;
         gsize length = 0;
         if (g_file_load_contents(file, NULL, &contents, &length, NULL, &error)) {
             new_notebook_page(filePath, contents, length);
-
         }
     }
     gtk_window_close(GTK_WINDOW(dialog));
@@ -159,7 +201,6 @@ static void open_file_handler(GSimpleAction *action, GVariant *parameter, gpoint
     g_signal_connect(dialog, "response", G_CALLBACK(open_file), user_data);
 }
 
-
 /*static void open_options() {
     GtkSourceStyleSchemeManager *scheme_manager = gtk_source_style_scheme_manager_get_default();
     const gchar *const *schemes = gtk_source_style_scheme_manager_get_scheme_ids(scheme_manager);
@@ -170,7 +211,6 @@ static void open_file_handler(GSimpleAction *action, GVariant *parameter, gpoint
         schemes++;
     }
 }*/
-
 
 static void save_file(GSimpleAction *action, GVariant *parameter, gpointer user_data) {
     gint current_tab = gtk_notebook_get_current_page(notebook);
@@ -234,11 +274,13 @@ static void new_file(GSimpleAction *action, GVariant *parameter, gpointer user_d
     new_notebook_page("Untitled", "", 0);
 }
 
-
 static void change_theme(GtkStringList *string_list, const gchar *item, gpointer user_data) {
     // Handle the selected theme here
-    g_print("Selected theme: %s\n", item);
     GtkSourceStyleScheme *style_scheme = gtk_source_style_scheme_manager_get_scheme(gtk_source_style_scheme_manager_get_default(), item);
+
+    // Save the selected theme to the config file
+    save_config(item);
+
 
     // Loop through all tabs and set the selected style scheme
     for (GList *l = tabs; l != NULL; l = l->next) {
@@ -257,7 +299,6 @@ static void ok_button_clicked(GtkButton *button, gpointer user_data) {
     const gchar *selected_pointer = gtk_string_list_get_string(scheme_list, index);
 
     // get the selected item name from the pointer
-    g_print("Selected item: %s\n", (gchar *)selected_pointer);
 
     change_theme(scheme_list, selected_pointer, NULL);
 }
@@ -272,16 +313,33 @@ static void preferences_handler(GSimpleAction *action, GVariant *parameter, gpoi
     gtk_window_set_default_size(preferences_dialog, 400, 400);
     gtk_window_present(preferences_dialog);
 
+
+
     GtkSourceStyleSchemeManager *scheme_manager = gtk_source_style_scheme_manager_get_default();
     const gchar *const *schemes = gtk_source_style_scheme_manager_get_scheme_ids(scheme_manager);
     g_signal_connect(ok_button, "clicked", G_CALLBACK(ok_button_clicked), scheme_dropdown);
     // make the button active
     gtk_widget_set_sensitive(GTK_WIDGET(ok_button), TRUE);
     // Print the available style schemes
-    while (*schemes != NULL) {
+    /*while (*schemes != NULL) {
+        if(g_strcmp0(*schemes, selectedScheme) == 0) {
+            //get the index of the selected scheme
+            gint index = gtk_string_list_get_string(scheme_list, *schemes);
+            gtk_drop_down_set_selected(scheme_dropdown, index);
+        }
         gtk_string_list_append(scheme_list, *schemes);
         schemes++;
+    }*/
+    gint index = 0;
+    for(gint i = 0; i < g_strv_length((gchar **)schemes); i++) {
+        if(g_strcmp0(schemes[i], selectedScheme) == 0) {
+            //get the index of the selected scheme
+            g_print("Selected scheme: %s\n", schemes[i]);
+            index=i;
+        }
+        gtk_string_list_append(scheme_list, schemes[i]);
     }
+    gtk_drop_down_set_selected(scheme_dropdown, index);
     g_signal_connect(preferences_dialog, "response", G_CALLBACK(preferences_delete_event_handler), NULL);
 }
 static void activate(GtkApplication *app, gpointer user_data) {
@@ -318,7 +376,10 @@ int main(int argc, char **argv) {
 
     app = gtk_application_new("com.example.gtk4", G_APPLICATION_DEFAULT_FLAGS);
     g_signal_connect(app, "activate", G_CALLBACK(activate), NULL);
+    load_config();
     status = g_application_run(G_APPLICATION(app), argc, argv);
+
+
 
     g_object_unref(app);
 
