@@ -53,7 +53,8 @@ void Input::handleInput() {
         if (cursorY >= 0 && cursorY < file_.textLines.size()) {
             if (!file_.textLines[cursorY + terminal_.offset].empty()) {
                 string deletedLine = file_.textLines[cursorY + terminal_.offset];
-                if (cursorY != 0) {
+                if (cursorY + terminal_.offset != 0) {
+                    moveCursorUp();
                     wmove(terminal_.editorWindow, cursorY, 0);
                 }
 

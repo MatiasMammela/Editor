@@ -1,4 +1,5 @@
 #include "Syntax.h"
+#include <cctype>
 Syntax::Syntax() {
     start_color();
     init_pair(BRACKET, COLOR_YELLOW, COLOR_BLACK);
@@ -27,13 +28,13 @@ void Syntax::drawSyntaxHighlighting(WINDOW *window, int y, int x, std::string li
         if (line.substr(x, 1) == "{" || line.substr(x, 1) == "}" || line.substr(x, 1) == "(" || line.substr(x, 1) == ")" || line.substr(x, 1) == "[" || line.substr(x, 1) == "]") {
             printColorPair(BRACKET, window, x, y, line.substr(x, 1));
             x++;
-        } else if (line.substr(x, 3) == "int" && (x == 0 || line.substr(x - 1, 1) == " ")) {
+        } else if (line.substr(x, 3) == "int" && (x == 0 || line.substr(x - 1, 1) == " " || line.substr(x + 2, 1) == " ")) {
             printColorPair(DECLARATION, window, x, y, line.substr(x, 3));
             x += 3;
-        } else if (line.substr(x, 6) == "string") {
+        } else if (line.substr(x, 6) == "string" && (x == 0 || line.substr(x - 1, 1) == " " || line.substr(x + 1, 1) == " ")) {
             printColorPair(DECLARATION, window, x, y, line.substr(x, 6));
             x += 6;
-        } else if (line.substr(x, 4) == "char" || line.substr(x, 4) == "bool") {
+        } else if ((line.substr(x, 4) == "char" || line.substr(x, 4) == "bool") && (x == 0 || line.substr(x - 1, 1) == " " || line.substr(x + 1, 1) == " ")) {
             printColorPair(DECLARATION, window, x, y, line.substr(x, 4));
             x += 4;
         } else if (line.substr(x, 4) == "void") {
