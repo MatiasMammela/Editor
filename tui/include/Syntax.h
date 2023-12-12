@@ -16,7 +16,8 @@ public:
     };
 
     Syntax();
-
+    void printColoredString(WINDOW *window, int x, int y, std::string word, int colorPair);
+    void handleDeclaration(WINDOW *window, int &x, int y, std::string line, const std::string &keyword, int colorPair);
     void drawSyntaxHighlighting(WINDOW *window, int y, int x, std::string line);
 
 private:

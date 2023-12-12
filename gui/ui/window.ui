@@ -3,6 +3,8 @@
 <interface>
   <requires lib="gtk" version="4.0"/>
   <requires lib="gio" version="2.0"/>
+
+  <!--MAIN WINDOW-->
   <object class="GtkApplicationWindow" id="window">
     <property name="default-height">500</property>
     <property name="default-width">500</property>
@@ -21,6 +23,9 @@
       </object>
     </child>
   </object>
+
+
+<!--MENUBAR-->
   <menu id="menubar">
     <submenu>
       <attribute name="label">File</attribute>
@@ -37,5 +42,42 @@
         <attribute name="action">app.saveas</attribute>
       </item>
     </submenu>
+        <submenu>
+      <attribute name="label">Options</attribute>
+      <item>
+        <attribute name="label">Preferences</attribute>
+        <attribute name="action">app.preferences</attribute>
+      </item>
+    </submenu>
   </menu>
+
+
+<!--PREFERENCES WINDOW-->
+<object class="GtkDialog" id="preferences_dialog">
+  <child>
+    <object class="GtkGrid">
+      <!-- Dropdown goes in row 0, column 0 -->
+      <child>
+        <object class="GtkDropDown" id="scheme_dropdown">
+          <property name="model">
+            <object class="GtkStringList" id="scheme_list">
+            </object>
+          </property>
+        </object>
+      </child>
+      <!-- Button goes in row 1, column 0 -->
+      <child>
+        <object class="GtkButton" id="ok_button">
+          <property name="label">Ok</property>
+          <property name="action-name">app.preferences.ok</property>
+        </object>
+      </child>
+    </object>
+  </child>
+</object>
+
+
+
+
+
 </interface>

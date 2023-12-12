@@ -3,6 +3,11 @@
 
 static GtkNotebook *notebook;
 static GtkWindow *window;
+static GtkWindow *preferences_dialog;
+static GtkStringList *scheme_list;
+static GtkDropDown *scheme_dropdown;
+static GtkButton *ok_button;
+static char *theme;
 GList *tabs = NULL;
 struct fileTab {
     char *filePath;
@@ -23,6 +28,9 @@ static void open_file(GtkDialog *dialog, gint response_id, gpointer user_data) {
     if (response_id == GTK_RESPONSE_ACCEPT) {
         GFile *file = gtk_file_chooser_get_file(GTK_FILE_CHOOSER(dialog));
         char *filePath = g_file_get_path(file);
+
+        GtkSettings *settings = gtk_settings_get_default();
+        g_object_set(settings, "gtk-application-prefer-dark-theme", TRUE, NULL);
 
         GError *error = NULL;
         char *contents = NULL;
@@ -82,6 +90,19 @@ static void open_file(GtkDialog *dialog, gint response_id, gpointer user_data) {
     }
     gtk_window_close(GTK_WINDOW(dialog));
 }
+
+
+/*static void open_options() {
+    GtkSourceStyleSchemeManager *scheme_manager = gtk_source_style_scheme_manager_get_default();
+    const gchar *const *schemes = gtk_source_style_scheme_manager_get_scheme_ids(scheme_manager);
+
+    // Print the available style schemes
+    while (*schemes != NULL) {
+        g_print("Available Style Scheme: %s\n", *schemes);
+        schemes++;
+    }
+}*/
+
 
 static void save_file(GSimpleAction *action, GVariant *parameter, gpointer user_data) {
     gint current_tab = gtk_notebook_get_current_page(notebook);
@@ -185,18 +206,72 @@ static void open_file_handler(GSimpleAction *action, GVariant *parameter, gpoint
     g_signal_connect(dialog, "response", G_CALLBACK(open_file), user_data);
 }
 
+static void change_theme(GtkStringList *string_list, const gchar *item, gpointer user_data) {
+    // Handle the selected theme here
+    g_print("Selected theme: %s\n", item);
+    GtkSourceStyleScheme *style_scheme = gtk_source_style_scheme_manager_get_scheme(gtk_source_style_scheme_manager_get_default(), item);
+
+    // Loop through all tabs and set the selected style scheme
+    for (GList *l = tabs; l != NULL; l = l->next) {
+        struct fileTab *tab = l->data;
+        GtkSourceBuffer *buffer = tab->buffer;
+        gtk_source_buffer_set_style_scheme(buffer, style_scheme);
+    }
+}
+
+static void ok_button_clicked(GtkButton *button, gpointer user_data) {
+    GtkDropDown *scheme_dropdown = GTK_DROP_DOWN(user_data);
+
+    gint index = gtk_drop_down_get_selected(scheme_dropdown);
+
+    // get the name of the selected item from the scheme_list
+    const gchar *selected_pointer = gtk_string_list_get_string(scheme_list, index);
+
+    // get the selected item name from the pointer
+    g_print("Selected item: %s\n", (gchar *)selected_pointer);
+
+    change_theme(scheme_list, selected_pointer, NULL);
+}
+static void preferences_delete_event_handler(GtkWindow *dialog, gint response_id, gpointer user_data) {
+    if (response_id == GTK_RESPONSE_DELETE_EVENT) {
+        gtk_widget_hide(GTK_WIDGET(dialog));
+    }
+}
+static void preferences_handler(GSimpleAction *action, GVariant *parameter, gpointer user_data) {
+    gtk_window_set_transient_for(preferences_dialog, window);
+    // set window size to 400x400
+    gtk_window_set_default_size(preferences_dialog, 400, 400);
+    gtk_window_present(preferences_dialog);
+
+    GtkSourceStyleSchemeManager *scheme_manager = gtk_source_style_scheme_manager_get_default();
+    const gchar *const *schemes = gtk_source_style_scheme_manager_get_scheme_ids(scheme_manager);
+    g_signal_connect(ok_button, "clicked", G_CALLBACK(ok_button_clicked), scheme_dropdown);
+    // make the button active
+    gtk_widget_set_sensitive(GTK_WIDGET(ok_button), TRUE);
+    // Print the available style schemes
+    while (*schemes != NULL) {
+        gtk_string_list_append(scheme_list, *schemes);
+        schemes++;
+    }
+    g_signal_connect(preferences_dialog, "response", G_CALLBACK(preferences_delete_event_handler), NULL);
+}
 static void activate(GtkApplication *app, gpointer user_data) {
     GtkBuilder *builder = gtk_builder_new();
     gtk_builder_add_from_file(builder, "window.ui", NULL);
 
     window = GTK_WINDOW(gtk_builder_get_object(builder, "window"));
     notebook = GTK_NOTEBOOK(gtk_builder_get_object(builder, "notebook"));
+    preferences_dialog = GTK_WINDOW(gtk_builder_get_object(builder, "preferences_dialog"));
+    scheme_list = GTK_STRING_LIST(gtk_builder_get_object(builder, "scheme_list"));
+    scheme_dropdown = GTK_DROP_DOWN(gtk_builder_get_object(builder, "scheme_dropdown"));
+    ok_button = GTK_BUTTON(gtk_builder_get_object(builder, "ok_button"));
+
     struct fileTab *tab = NULL;
     const GActionEntry app_entries[] = {
         {"open", open_file_handler, NULL, (gpointer)tab, NULL},
         {"saveas", saveAs_handler, NULL, (gpointer)tab, NULL},
         {"save", save_file, NULL, (gpointer)tab, NULL},
-    };
+        {"preferences", preferences_handler, NULL, (gpointer)tab, NULL}};
     g_action_map_add_action_entries(G_ACTION_MAP(app), app_entries, G_N_ELEMENTS(app_entries), app);
 
     GMenuModel *menubar = G_MENU_MODEL(gtk_builder_get_object(builder, "menubar"));
