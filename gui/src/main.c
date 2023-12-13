@@ -6,10 +6,13 @@ static GtkWindow *window;
 static GtkWindow *preferences_dialog;
 static GtkStringList *scheme_list;
 static GtkDropDown *scheme_dropdown;
+static GtkDropDown *global_theme_dropdown;
 static GtkButton *ok_button;
-
+static GtkStringList *global_theme_list;
 static gchar *selectedScheme = NULL;
 
+
+static GList* explorerFiles = NULL;
 
 GList *tabs = NULL;
 struct fileTab {
@@ -126,17 +129,34 @@ static void open_file(GtkDialog *dialog, gint response_id, gpointer user_data) {
     if (response_id == GTK_RESPONSE_ACCEPT) {
         GFile *file = gtk_file_chooser_get_file(GTK_FILE_CHOOSER(dialog));
         char *filePath = g_file_get_path(file);
+        
+        //check if file is a directory
+        if(g_file_query_file_type(file, G_FILE_QUERY_INFO_NONE, NULL) == G_FILE_TYPE_DIRECTORY){
+            g_print("its a directory\n");
+            //get the files in the directory and insert them into the explorer
+            GFileEnumerator *enumerator = g_file_enumerate_children(file, G_FILE_ATTRIBUTE_STANDARD_NAME, G_FILE_QUERY_INFO_NONE, NULL, NULL);
+            GFileInfo *info = NULL;
+            while ((info = g_file_enumerator_next_file(enumerator, NULL, NULL)) != NULL) {
+                const char *name = g_file_info_get_name(info);
+                char *path = g_build_filename(filePath, name, NULL);
+                g_print("File: %s\n", path);
+                explorerFiles = g_list_append(explorerFiles, path);
+                g_object_unref(info);
+            }
+        }else{
 
-
-        GError *error = NULL;
-        char *contents = NULL;
-        gsize length = 0;
-        if (g_file_load_contents(file, NULL, &contents, &length, NULL, &error)) {
-            new_notebook_page(filePath, contents, length);
+            //if the file is not a directory, open it
+            GError *error = NULL;
+            char *contents = NULL;
+            gsize length = 0;
+            if (g_file_load_contents(file, NULL, &contents, &length, NULL, &error)) {
+                new_notebook_page(filePath, contents, length);
+            }
         }
     }
     gtk_window_close(GTK_WINDOW(dialog));
 }
+
 
 static void saveAs(GtkDialog *dialog, gint response_id, gpointer user_data) {
     if (response_id == GTK_RESPONSE_ACCEPT) {
@@ -289,18 +309,38 @@ static void change_theme(GtkStringList *string_list, const gchar *item, gpointer
         gtk_source_buffer_set_style_scheme(buffer, style_scheme);
     }
 }
+static void change_global_theme(const gchar *item, gpointer user_data) {
+    // Get the default settings
+    GtkSettings *settings = gtk_settings_get_default();
+
+    // Check the selected item and update the theme accordingly
+
+    if (g_strcmp0(item, "Dark") == 0) {
+        g_object_set(settings, "gtk-application-prefer-dark-theme", TRUE, NULL);
+    } else {
+        g_object_set(settings, "gtk-application-prefer-dark-theme", FALSE, NULL);
+
+        g_print("Light theme selected\n");
+    }
+}
+    typedef struct {
+        GtkDropDown *scheme_dropdown;
+        GtkDropDown *global_theme_dropdown;
+    } Settings;
 
 static void ok_button_clicked(GtkButton *button, gpointer user_data) {
-    GtkDropDown *scheme_dropdown = GTK_DROP_DOWN(user_data);
 
-    gint index = gtk_drop_down_get_selected(scheme_dropdown);
+    Settings *settings_data = (Settings *)user_data;
 
-    // get the name of the selected item from the scheme_list
+    // Get the selected scheme from the dropdown
+    gint index = gtk_drop_down_get_selected(settings_data->scheme_dropdown);
     const gchar *selected_pointer = gtk_string_list_get_string(scheme_list, index);
-
-    // get the selected item name from the pointer
-
     change_theme(scheme_list, selected_pointer, NULL);
+
+    // Get the selected global theme from the dropdown
+    gint global_theme_index = gtk_drop_down_get_selected(settings_data->global_theme_dropdown);
+    const gchar *global_theme_pointer = gtk_string_list_get_string(global_theme_list, global_theme_index);
+    change_global_theme(global_theme_pointer, NULL);
 }
 static void preferences_delete_event_handler(GtkWindow *dialog, gint response_id, gpointer user_data) {
     if (response_id == GTK_RESPONSE_DELETE_EVENT) {
@@ -314,10 +354,12 @@ static void preferences_handler(GSimpleAction *action, GVariant *parameter, gpoi
     gtk_window_present(preferences_dialog);
 
 
-
+    Settings *settings_data = g_new(Settings, 1);
+    settings_data->global_theme_dropdown = global_theme_dropdown;
+    settings_data->scheme_dropdown = scheme_dropdown;
     GtkSourceStyleSchemeManager *scheme_manager = gtk_source_style_scheme_manager_get_default();
     const gchar *const *schemes = gtk_source_style_scheme_manager_get_scheme_ids(scheme_manager);
-    g_signal_connect(ok_button, "clicked", G_CALLBACK(ok_button_clicked), scheme_dropdown);
+    g_signal_connect(ok_button, "clicked", G_CALLBACK(ok_button_clicked), settings_data);
     // make the button active
     gtk_widget_set_sensitive(GTK_WIDGET(ok_button), TRUE);
     // Print the available style schemes
@@ -331,13 +373,16 @@ static void preferences_handler(GSimpleAction *action, GVariant *parameter, gpoi
         schemes++;
     }*/
     gint index = 0;
+
     for(gint i = 0; i < g_strv_length((gchar **)schemes); i++) {
         if(g_strcmp0(schemes[i], selectedScheme) == 0) {
             //get the index of the selected scheme
             g_print("Selected scheme: %s\n", schemes[i]);
             index=i;
         }
-        gtk_string_list_append(scheme_list, schemes[i]);
+        if (gtk_string_list_get_string(scheme_list,i) == NULL) {
+            gtk_string_list_append(scheme_list, schemes[i]);
+        }
     }
     gtk_drop_down_set_selected(scheme_dropdown, index);
     g_signal_connect(preferences_dialog, "response", G_CALLBACK(preferences_delete_event_handler), NULL);
@@ -352,7 +397,8 @@ static void activate(GtkApplication *app, gpointer user_data) {
     scheme_list = GTK_STRING_LIST(gtk_builder_get_object(builder, "scheme_list"));
     scheme_dropdown = GTK_DROP_DOWN(gtk_builder_get_object(builder, "scheme_dropdown"));
     ok_button = GTK_BUTTON(gtk_builder_get_object(builder, "ok_button"));
-
+    global_theme_list = GTK_STRING_LIST(gtk_builder_get_object(builder, "global_theme_list"));
+    global_theme_dropdown = GTK_DROP_DOWN(gtk_builder_get_object(builder, "global_theme_dropdown"));
     struct fileTab *tab = NULL;
     const GActionEntry app_entries[] = {
         {"open", open_file_handler, NULL, (gpointer)tab, NULL},
@@ -374,9 +420,18 @@ int main(int argc, char **argv) {
     GtkApplication *app;
     int status;
 
+
+
+
     app = gtk_application_new("com.example.gtk4", G_APPLICATION_DEFAULT_FLAGS);
+
+
+
     g_signal_connect(app, "activate", G_CALLBACK(activate), NULL);
     load_config();
+
+
+
     status = g_application_run(G_APPLICATION(app), argc, argv);
 
 
