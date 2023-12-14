@@ -1,17 +1,16 @@
+#include "text_editor.h"
+#include "explorer.h"
+#include "main.h"
+#include <gio/gio.h>
 #include <gtk/gtk.h>
 #include <gtksourceview/gtksource.h>
-#include <gio/gio.h>
-#include "main.h"
-#include "text_editor.h"
 
 GtkNotebook *notebook;
 gchar *selectedScheme = NULL;
 GList *tabs = NULL;
-static GList* explorerFiles = NULL;
+static GList *explorerFiles = NULL;
 
-
-
-static void remove_tab(GtkWidget *button, gpointer data) {
+void remove_tab(GtkWidget *button, gpointer data) {
     struct fileTab *tab = (struct fileTab *)data;
     gint index = gtk_notebook_page_num(notebook, tab->scrolled_window);
     gtk_notebook_remove_page(notebook, index);
@@ -41,9 +40,6 @@ void new_notebook_page(char *filePath, char *contents, gsize length) {
     GtkSourceLanguageManager *language_manager = gtk_source_language_manager_new();
     GtkSourceLanguage *language = gtk_source_language_manager_guess_language(language_manager, filePath, NULL);
 
-
-
-
     if (language != NULL) {
         tab->buffer = gtk_source_buffer_new_with_language(language);
     } else {
@@ -59,8 +55,8 @@ void new_notebook_page(char *filePath, char *contents, gsize length) {
     tab->source_view = source_view;
     tab->scrolled_window = scrolled_window;
     tab->label = label;
-    
-    //set line numbers
+
+    // set line numbers
     gtk_source_view_set_show_line_numbers(GTK_SOURCE_VIEW(source_view), TRUE);
 
     // set sourceview to scrolled window
@@ -69,9 +65,32 @@ void new_notebook_page(char *filePath, char *contents, gsize length) {
     // append scrolled window to notebook
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook), scrolled_window, hbox);
 
-    //set the style scheme
+    // set the style scheme
+    if (selectedScheme == NULL) {
+        selectedScheme = "classic";
+    }
     GtkSourceStyleScheme *style_scheme = gtk_source_style_scheme_manager_get_scheme(gtk_source_style_scheme_manager_get_default(), selectedScheme);
     gtk_source_buffer_set_style_scheme(tab->buffer, style_scheme);
+
+    GtkCssProvider *cssProvider;
+    GtkStyleContext *context;
+    GError *error = NULL;
+    /* new css provider */
+    cssProvider = gtk_css_provider_new();
+
+    /* widget name for css syntax */
+    gtk_widget_set_name(GTK_WIDGET(tab->source_view), "cssView");
+
+    /* load css file */
+    gtk_css_provider_load_from_path(cssProvider, "main.css");
+
+    /* get GtkStyleContext from widget   */
+    context = gtk_widget_get_style_context(GTK_WIDGET(tab->source_view));
+
+    /* finally load style provider */
+    gtk_style_context_add_provider(context,
+                                   GTK_STYLE_PROVIDER(cssProvider),
+                                   GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 
     // append tab to list
     tabs = g_list_append(tabs, tab);
@@ -88,23 +107,26 @@ static void open_file(GtkDialog *dialog, gint response_id, gpointer user_data) {
     if (response_id == GTK_RESPONSE_ACCEPT) {
         GFile *file = gtk_file_chooser_get_file(GTK_FILE_CHOOSER(dialog));
         char *filePath = g_file_get_path(file);
-        
-        //check if file is a directory
-        if(g_file_query_file_type(file, G_FILE_QUERY_INFO_NONE, NULL) == G_FILE_TYPE_DIRECTORY){
-            g_print("its a directory\n");
-            //get the files in the directory and insert them into the explorer
-            GFileEnumerator *enumerator = g_file_enumerate_children(file, G_FILE_ATTRIBUTE_STANDARD_NAME, G_FILE_QUERY_INFO_NONE, NULL, NULL);
-            GFileInfo *info = NULL;
-            while ((info = g_file_enumerator_next_file(enumerator, NULL, NULL)) != NULL) {
-                const char *name = g_file_info_get_name(info);
-                char *path = g_build_filename(filePath, name, NULL);
-                g_print("File: %s\n", path);
-                explorerFiles = g_list_append(explorerFiles, path);
-                g_object_unref(info);
-            }
-        }else{
 
-            //if the file is not a directory, open it
+        // check if file is a directory
+        if (g_file_query_file_type(file, G_FILE_QUERY_INFO_NONE, NULL) == G_FILE_TYPE_DIRECTORY) {
+            g_print("its a directory\n");
+            // Set up the tree view (add columns, populate the store with GFile, etc.)
+            GtkTreeStore *treestore = gtk_tree_store_new(NUM_COLUMNS, G_TYPE_POINTER, G_TYPE_STRING);
+            populate_tree_store(treestore, filePath, NULL);
+            gtk_tree_view_set_model(tree_view, GTK_TREE_MODEL(treestore));
+            g_object_unref(treestore);
+
+            // get the name of the directory
+            gchar *filename = g_file_get_basename(file);
+
+            GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
+            GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes(filename, renderer, "text", COLUMN_NAME, NULL);
+            gtk_tree_view_append_column(GTK_TREE_VIEW(tree_view), column);
+            g_signal_connect(tree_view, "row-activated", G_CALLBACK(on_row_activated), NULL);
+        } else {
+
+            // if the file is not a directory, open it
             GError *error = NULL;
             char *contents = NULL;
             gsize length = 0;
