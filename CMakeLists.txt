@@ -21,9 +21,9 @@ link_directories(${GTK4_LIBRARY_DIRS})
 link_directories(${GTKSOURCEVIEW_LIBRARY_DIRS})
 add_definitions(${GTKSOURCEVIEW_CFLAGS_OTHER})
 file(GLOB GUI_SOURCES "gui/src/*.c")
-
+file(GLOB CSS_SOURCES "gui/src/*.css")
 file(GLOB UI_FILES "gui/ui/*.ui")
 file(COPY ${UI_FILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-
-add_executable(editor_gui ${GUI_SOURCES})
+file(COPY ${CSS_SOURCES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+add_executable(editor_gui ${GUI_SOURCES} )
 target_link_libraries(editor_gui ${CURSES_LIBRARIES} ${GTK4_LIBRARIES} ${GTKSOURCEVIEW_LIBRARIES} )
