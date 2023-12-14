@@ -1,6 +1,7 @@
 #include <gtk/gtk.h>
 #include <gtksourceview/gtksource.h>
 #include <glib.h>
+#include <gdk/gdk.h>
 static GtkNotebook *notebook;
 static GtkWindow *window;
 static GtkWindow *preferences_dialog;
@@ -10,8 +11,7 @@ static GtkDropDown *global_theme_dropdown;
 static GtkButton *ok_button;
 static GtkStringList *global_theme_list;
 static gchar *selectedScheme = NULL;
-
-
+static GtkTreeView *tree_view;
 static GList* explorerFiles = NULL;
 
 GList *tabs = NULL;
@@ -23,6 +23,43 @@ struct fileTab {
     GtkWidget *label;
 };
 extern GList *tabs;
+enum {
+    COLUMN_FILE,
+    COLUMN_NAME,
+    NUM_COLUMNS
+};
+void populate_tree_store(GtkTreeStore *treestore, const gchar *path, GtkTreeIter *parent)
+{
+    GDir *dir = g_dir_open(path, 0, NULL);
+    if (!dir)
+        return;
+
+    const gchar *filename;
+    while ((filename = g_dir_read_name(dir)) != NULL) {
+        if (g_str_equal(filename, ".") || g_str_equal(filename, ".."))
+            continue;
+
+        gchar *full_path = g_build_filename(path, filename, NULL);
+
+        GtkTreeIter iter;
+        gtk_tree_store_append(treestore, &iter, parent);
+        
+        GFile *file = g_file_new_for_path(full_path);
+        gtk_tree_store_set(treestore, &iter, COLUMN_FILE, file, COLUMN_NAME, filename, -1);
+
+        if (g_file_test(full_path, G_FILE_TEST_IS_DIR)) {
+            populate_tree_store(treestore, full_path, &iter);
+        }
+
+        g_free(full_path);
+    }
+
+    g_dir_close(dir);
+}
+
+
+
+
 
 const gchar *load_config() {
     GKeyFile *keyfile = g_key_file_new();
@@ -41,6 +78,7 @@ const gchar *load_config() {
     g_key_file_free(keyfile);
     return NULL;
 }
+
 void save_config(const gchar *selectedScheme) {
     GKeyFile *keyfile = g_key_file_new();
     g_key_file_set_string(keyfile, "Preferences", "SelectedScheme", selectedScheme);
@@ -54,8 +92,6 @@ void save_config(const gchar *selectedScheme) {
     g_free(configData);
     g_key_file_free(keyfile);
 }
-
-
 void remove_tab(GtkWidget *button, gpointer data) {
     struct fileTab *tab = (struct fileTab *)data;
     gint index = gtk_notebook_page_num(notebook, tab->scrolled_window);
@@ -104,7 +140,7 @@ void new_notebook_page(char *filePath, char *contents, gsize length) {
     tab->source_view = source_view;
     tab->scrolled_window = scrolled_window;
     tab->label = label;
-    
+
     //set line numbers
     gtk_source_view_set_show_line_numbers(GTK_SOURCE_VIEW(source_view), TRUE);
 
@@ -115,16 +151,89 @@ void new_notebook_page(char *filePath, char *contents, gsize length) {
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook), scrolled_window, hbox);
 
     //set the style scheme
+    if(selectedScheme == NULL) {
+        selectedScheme = "classic";
+    }
     GtkSourceStyleScheme *style_scheme = gtk_source_style_scheme_manager_get_scheme(gtk_source_style_scheme_manager_get_default(), selectedScheme);
     gtk_source_buffer_set_style_scheme(tab->buffer, style_scheme);
+
+    GtkCssProvider *cssProvider;
+    GtkStyleContext *context;
+    GError *error = NULL;
+    /* new css provider */
+    cssProvider = gtk_css_provider_new(); 
+
+
+    /* widget name for css syntax */
+    gtk_widget_set_name (GTK_WIDGET(tab->source_view), "cssView");   
+
+    /* load css file */
+    gtk_css_provider_load_from_path (cssProvider, "main.css"); 
+
+    /* get GtkStyleContext from widget   */
+    context = gtk_widget_get_style_context(GTK_WIDGET(tab->source_view));  
+
+    /* finally load style provider */
+    gtk_style_context_add_provider(context,    
+                                GTK_STYLE_PROVIDER(cssProvider), 
+                                GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+
 
     // append tab to list
     tabs = g_list_append(tabs, tab);
 
     // set current page to new page
     gtk_notebook_set_current_page(GTK_NOTEBOOK(notebook), gtk_notebook_get_n_pages(GTK_NOTEBOOK(notebook)) - 1);
-}
 
+
+}
+void on_row_activated(GtkTreeView *treeview, GtkTreePath *path, GtkTreeViewColumn *column, gpointer user_data)
+{
+    GtkTreeModel *model;
+    GtkTreeIter iter;
+
+    // Get the model associated with the tree view
+    model = gtk_tree_view_get_model(treeview);
+
+    // Retrieve the data for the activated row
+    if (gtk_tree_model_get_iter(model, &iter, path)) {
+        gchar *filename;
+
+        // Assuming the data for the file is stored as GFile in column 0
+        GFile *file;
+        gtk_tree_model_get(model, &iter, COLUMN_FILE, &file, COLUMN_NAME, &filename, -1);
+
+        // Check if the GFile is valid
+        if (G_IS_FILE(file)) {
+            // Get the path from the GFile
+            gchar *filePath = g_file_get_path(file);
+
+            GError *error = NULL;
+            char *contents = NULL;
+            gsize length = 0;
+
+            // Use g_file_load_contents to read the file contents
+            if (g_file_load_contents(file, NULL, &contents, &length, NULL, &error)) {
+                // Assuming new_notebook_page is a function you have to create for your application
+                new_notebook_page(filePath, contents, length);
+            } else {
+                g_print("Error loading file contents: %s\n", error->message);
+                g_error_free(error);
+            }
+
+            // Now you have the filename, you can perform actions like opening the file
+            g_print("Activated: %s\n", filename);
+
+            // Don't forget to free the allocated memory
+            g_free(filePath);
+            g_free(contents);
+        } else {
+            g_print("Invalid GFile\n");
+        }
+
+        g_free(filename);
+    }
+}
 static void open_file(GtkDialog *dialog, gint response_id, gpointer user_data) {
     if (response_id == GTK_RESPONSE_ACCEPT) {
         GFile *file = gtk_file_chooser_get_file(GTK_FILE_CHOOSER(dialog));
@@ -133,16 +242,19 @@ static void open_file(GtkDialog *dialog, gint response_id, gpointer user_data) {
         //check if file is a directory
         if(g_file_query_file_type(file, G_FILE_QUERY_INFO_NONE, NULL) == G_FILE_TYPE_DIRECTORY){
             g_print("its a directory\n");
-            //get the files in the directory and insert them into the explorer
-            GFileEnumerator *enumerator = g_file_enumerate_children(file, G_FILE_ATTRIBUTE_STANDARD_NAME, G_FILE_QUERY_INFO_NONE, NULL, NULL);
-            GFileInfo *info = NULL;
-            while ((info = g_file_enumerator_next_file(enumerator, NULL, NULL)) != NULL) {
-                const char *name = g_file_info_get_name(info);
-                char *path = g_build_filename(filePath, name, NULL);
-                g_print("File: %s\n", path);
-                explorerFiles = g_list_append(explorerFiles, path);
-                g_object_unref(info);
-            }
+                // Set up the tree view (add columns, populate the store with GFile, etc.)
+                GtkTreeStore *treestore = gtk_tree_store_new(NUM_COLUMNS, G_TYPE_POINTER, G_TYPE_STRING);
+                populate_tree_store(treestore, filePath, NULL);
+                gtk_tree_view_set_model(tree_view, GTK_TREE_MODEL(treestore));
+                g_object_unref(treestore);
+
+                //get the name of the directory
+                gchar *filename = g_file_get_basename(file);
+
+                GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
+                GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes(filename, renderer, "text", COLUMN_NAME, NULL);
+                gtk_tree_view_append_column(GTK_TREE_VIEW(tree_view), column);
+                g_signal_connect(tree_view, "row-activated", G_CALLBACK(on_row_activated), NULL);
         }else{
 
             //if the file is not a directory, open it
@@ -399,6 +511,20 @@ static void activate(GtkApplication *app, gpointer user_data) {
     ok_button = GTK_BUTTON(gtk_builder_get_object(builder, "ok_button"));
     global_theme_list = GTK_STRING_LIST(gtk_builder_get_object(builder, "global_theme_list"));
     global_theme_dropdown = GTK_DROP_DOWN(gtk_builder_get_object(builder, "global_theme_dropdown"));
+    tree_view = GTK_TREE_VIEW(gtk_builder_get_object(builder, "tree_view"));
+    
+    //populate the tree view
+    /*
+    GtkTreeStore *treestore = gtk_tree_store_new(NUM_COLUMNS, G_TYPE_STRING, G_TYPE_INT);
+    populate_tree_store(treestore, ".", NULL);
+    gtk_tree_view_set_model(tree_view, GTK_TREE_MODEL(treestore));
+    g_object_unref(treestore);
+
+
+    GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
+    GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes("File Name", renderer, "text", COLUMN_NAME, NULL);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(tree_view), column);*/
+
     struct fileTab *tab = NULL;
     const GActionEntry app_entries[] = {
         {"open", open_file_handler, NULL, (gpointer)tab, NULL},
