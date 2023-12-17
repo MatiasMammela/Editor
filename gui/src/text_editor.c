@@ -120,34 +120,43 @@ static void open_file(GtkDialog *dialog, gint response_id, gpointer user_data) {
 
 
 
-            GtkCellRenderer *renderer = gtk_cell_renderer_pixbuf_new();
-            GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes("", renderer, "pixbuf", COLUMN_ICON, NULL);
-            gtk_tree_view_append_column(GTK_TREE_VIEW(tree_view), column);
+            
+
+            // use the same column if it exists
+            GtkTreeViewColumn *column = gtk_tree_view_get_column(GTK_TREE_VIEW(tree_view), 0);
+            if (column == NULL) {
+                // create a new column
+
+                GtkCellRenderer *renderer = gtk_cell_renderer_pixbuf_new();
+                GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes("", renderer, "pixbuf", COLUMN_ICON, NULL);
+                gtk_tree_view_append_column(GTK_TREE_VIEW(tree_view), column);
 
 
-            // Create an empty box for the icon column header
-            GtkWidget *empty_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-            gtk_widget_set_name(empty_box, "empty-header");
-            gtk_tree_view_column_set_widget(column, empty_box);
+                // Create an empty box for the icon column header
+                GtkWidget *empty_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+                gtk_widget_set_name(empty_box, "empty-header");
+                gtk_tree_view_column_set_widget(column, empty_box);
 
 
 
 
-            renderer = gtk_cell_renderer_text_new();
-            column = gtk_tree_view_column_new_with_attributes("Text", renderer, "text", COLUMN_NAME, NULL);
-            gtk_tree_view_append_column(GTK_TREE_VIEW(tree_view), column);
+                renderer = gtk_cell_renderer_text_new();
+                column = gtk_tree_view_column_new_with_attributes("Text", renderer, "text", COLUMN_NAME, NULL);
+                gtk_tree_view_append_column(GTK_TREE_VIEW(tree_view), column);
 
-            // Create a box for the text column header
-            GtkWidget *box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-            GtkWidget *label = gtk_label_new(filename);
-            gtk_box_append(GTK_BOX(box), label);
-            gtk_widget_show(box);
-            gtk_tree_view_column_set_widget(column, box);
+                // Create a box for the text column header
+                GtkWidget *box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+                GtkWidget *label = gtk_label_new(filename);
+                gtk_box_append(GTK_BOX(box), label);
+                gtk_widget_show(box);
+                gtk_tree_view_column_set_widget(column, box);
+                gtk_tree_view_set_enable_tree_lines(GTK_TREE_VIEW(tree_view), TRUE);
 
-            //enable grid lines
-            gtk_tree_view_set_enable_tree_lines(GTK_TREE_VIEW(tree_view), TRUE);
-
-            g_signal_connect(tree_view, "row-activated", G_CALLBACK(on_row_activated), NULL);
+                g_signal_connect(tree_view, "row-activated", G_CALLBACK(on_row_activated), NULL);
+            } else {
+                // set the column name
+                gtk_tree_view_column_set_title(column, filename);
+            }
         } else {
 
             // if the file is not a directory, open it
@@ -280,4 +289,28 @@ void open_file_handler(GSimpleAction *action, GVariant *parameter, gpointer user
     gtk_window_set_transient_for(dialog, window);
     gtk_window_present(dialog);
     g_signal_connect(dialog, "response", G_CALLBACK(open_file), user_data);
+}
+
+void open_folder_handler(GSimpleAction *action, GVariant *parameter, gpointer user_data) {
+    GtkWindow *dialog = GTK_WINDOW(gtk_file_chooser_dialog_new("Open File", NULL, GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER, "Cancel", GTK_RESPONSE_CANCEL, "Open", GTK_RESPONSE_ACCEPT, NULL));
+    gtk_window_set_transient_for(dialog, window);
+    gtk_window_present(dialog);
+    g_signal_connect(dialog, "response", G_CALLBACK(open_file), user_data);
+}
+
+void exit_handler(GSimpleAction *action, GVariant *parameter, gpointer user_data) {
+    gtk_window_close(window);
+}
+
+void update_actions(GtkNotebook *notebook, GActionMap *action_map) {
+    gboolean has_pages = gtk_notebook_get_n_pages(notebook) > 0;
+    GAction *save_action = g_action_map_lookup_action(action_map, "save");
+    GAction *saveas_action = g_action_map_lookup_action(action_map, "saveas");
+
+    g_simple_action_set_enabled(G_SIMPLE_ACTION(save_action), has_pages);
+    g_simple_action_set_enabled(G_SIMPLE_ACTION(saveas_action), has_pages);
+}
+
+void update_actions_handler(GtkNotebook *notebook, GtkWidget *child, guint page_num, gpointer user_data) {
+    update_actions(notebook, user_data);
 }

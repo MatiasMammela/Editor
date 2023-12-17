@@ -37,8 +37,12 @@
         <attribute name="action">app.new</attribute>
       </item>
       <item>
-        <attribute name="label">Open</attribute>
+        <attribute name="label">Open File</attribute>
         <attribute name="action">app.open</attribute>
+      </item>
+      <item>
+        <attribute name="label">Open Folder</attribute>
+        <attribute name="action">app.open_folder</attribute>
       </item>
       <item>
         <attribute name="label">Save</attribute>
@@ -47,6 +51,10 @@
       <item>
         <attribute name="label">Save as</attribute>
         <attribute name="action">app.saveas</attribute>
+      </item>
+      <item>
+        <attribute name="label">Exit</attribute>
+        <attribute name="action">app.exit</attribute>
       </item>
     </submenu>
     <submenu>
