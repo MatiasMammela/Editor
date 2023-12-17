@@ -15,7 +15,8 @@ struct fileTab {
 extern GtkNotebook *notebook;
 extern gchar *selectedScheme;
 extern GList *tabs;
-
+extern gchar *selectedGlobalTheme;
+extern gchar *selectedFontSize;
 void new_notebook_page(char *filePath, char *contents, gsize length);
 void new_file(GSimpleAction *action, GVariant *parameter, gpointer user_data);
 void saveAs_handler(GSimpleAction *action, GVariant *parameter, gpointer user_data);

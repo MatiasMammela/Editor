@@ -7,13 +7,16 @@
   <!--MAIN
   WINDOW-->
   <object class="GtkApplicationWindow" id="window">
+    <property name="name">window</property>
     <property name="default-height">500</property>
     <property name="default-width">500</property>
     <property name="show-menubar">True</property>
     <child>
       <object class="GtkPaned">
+        <property name="name">window</property>
         <child>
           <object class="GtkTreeView" id="tree_view">
+            <property name="name">window</property>
           </object>
         </child>
         <child>
@@ -114,8 +117,9 @@
             <property name="model">
               <object class="GtkStringList" id="global_theme_list">
                 <items>
-                  <item translatable="yes">Dark</item>
-                  <item translatable="yes">Light</item>
+                  <item translatable="yes">Hotpink</item>
+                  <item translatable="yes">Cyan</item>
+                  <item translatable="yes">None</item>
                 </items>
               </object>
             </property>
@@ -127,6 +131,27 @@
           </object>
         </child>
 
+        <child>
+          <object class="GtkLabel" id="font-size-label">
+            <property name="label">Font</property>
+            <property name="hexpand">TRUE</property>
+            <layout>
+              <property name="column">1</property>
+              <property name="row">3</property>
+            </layout>
+          </object>
+        </child>
+
+        <child>
+          <object class="GtkSpinButton" id="font_size_spin">
+            <property name="hexpand">TRUE</property>
+            <property name="adjustment">font_size_adjustment</property>
+            <layout>
+              <property name="column">2</property>
+              <property name="row">3</property>
+            </layout>
+          </object>
+        </child>
 
         <child>
           <object class="GtkButton" id="ok_button">
@@ -135,15 +160,19 @@
             <property name="hexpand">TRUE</property>
             <layout>
               <property name="column">2</property>
-              <property name="row">3</property>
+              <property name="row">4</property>
             </layout>
           </object>
         </child>
 
-
       </object>
     </child>
   </object>
-
+  <object class="GtkAdjustment" id="font_size_adjustment">
+    <property name="lower">6</property>
+    <property name="upper">48</property>
+    <property name="step-increment">1</property>
+    <property name="value">12</property> <!-- Set an initial value -->
+  </object>
 
 </interface>

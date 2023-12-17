@@ -7,6 +7,8 @@
 
 GtkNotebook *notebook;
 gchar *selectedScheme = NULL;
+gchar *selectedGlobalTheme = NULL;
+gchar *selectedFontSize = NULL;
 GList *tabs = NULL;
 static GList *explorerFiles = NULL;
 
@@ -52,9 +54,12 @@ void new_notebook_page(char *filePath, char *contents, gsize length) {
     // set sourceview to scrolled window
     GtkWidget *source_view = gtk_source_view_new_with_buffer(tab->buffer);
 
+
+
     tab->source_view = source_view;
     tab->scrolled_window = scrolled_window;
     tab->label = label;
+    
 
     // set line numbers
     gtk_source_view_set_show_line_numbers(GTK_SOURCE_VIEW(source_view), TRUE);
@@ -72,25 +77,19 @@ void new_notebook_page(char *filePath, char *contents, gsize length) {
     GtkSourceStyleScheme *style_scheme = gtk_source_style_scheme_manager_get_scheme(gtk_source_style_scheme_manager_get_default(), selectedScheme);
     gtk_source_buffer_set_style_scheme(tab->buffer, style_scheme);
 
-    GtkCssProvider *cssProvider;
-    GtkStyleContext *context;
-    GError *error = NULL;
-    /* new css provider */
-    cssProvider = gtk_css_provider_new();
 
-    /* widget name for css syntax */
-    gtk_widget_set_name(GTK_WIDGET(tab->source_view), "cssView");
+        //load css file for the source view and apply the #notebook to the tab->source_view
 
-    /* load css file */
-    gtk_css_provider_load_from_path(cssProvider, "main.css");
+    const char cssPath[] = "main.css";
+    GtkCssProvider * cssProvider = gtk_css_provider_new();
+    gtk_css_provider_load_from_path(cssProvider, cssPath);
+    gtk_style_context_add_provider_for_display(gdk_display_get_default(), GTK_STYLE_PROVIDER(cssProvider), GTK_STYLE_PROVIDER_PRIORITY_USER);
+    g_object_unref(cssProvider);
+    // set the font
+    
+    //set name of source_view for the source_view
+    gtk_widget_set_name(source_view, "source_view");
 
-    /* get GtkStyleContext from widget   */
-    context = gtk_widget_get_style_context(GTK_WIDGET(tab->source_view));
-
-    /* finally load style provider */
-    gtk_style_context_add_provider(context,
-                                   GTK_STYLE_PROVIDER(cssProvider),
-                                   GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 
     // append tab to list
     tabs = g_list_append(tabs, tab);
@@ -112,21 +111,47 @@ static void open_file(GtkDialog *dialog, gint response_id, gpointer user_data) {
         if (g_file_query_file_type(file, G_FILE_QUERY_INFO_NONE, NULL) == G_FILE_TYPE_DIRECTORY) {
             g_print("its a directory\n");
             // Set up the tree view (add columns, populate the store with GFile, etc.)
-            GtkTreeStore *treestore = gtk_tree_store_new(NUM_COLUMNS, G_TYPE_POINTER, G_TYPE_STRING);
+            GtkTreeStore *treestore = gtk_tree_store_new(NUM_COLUMNS, G_TYPE_POINTER, G_TYPE_STRING, GDK_TYPE_PIXBUF);
             populate_tree_store(treestore, filePath, NULL);
             gtk_tree_view_set_model(tree_view, GTK_TREE_MODEL(treestore));
             g_object_unref(treestore);
 
-            // get the name of the directory
             gchar *filename = g_file_get_basename(file);
+
+
+
+            
 
             // use the same column if it exists
             GtkTreeViewColumn *column = gtk_tree_view_get_column(GTK_TREE_VIEW(tree_view), 0);
             if (column == NULL) {
                 // create a new column
-                GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
-                column = gtk_tree_view_column_new_with_attributes(filename, renderer, "text", COLUMN_NAME, NULL);
+
+                GtkCellRenderer *renderer = gtk_cell_renderer_pixbuf_new();
+                GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes("", renderer, "pixbuf", COLUMN_ICON, NULL);
                 gtk_tree_view_append_column(GTK_TREE_VIEW(tree_view), column);
+
+
+                // Create an empty box for the icon column header
+                GtkWidget *empty_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+                gtk_widget_set_name(empty_box, "empty-header");
+                gtk_tree_view_column_set_widget(column, empty_box);
+
+
+
+
+                renderer = gtk_cell_renderer_text_new();
+                column = gtk_tree_view_column_new_with_attributes("Text", renderer, "text", COLUMN_NAME, NULL);
+                gtk_tree_view_append_column(GTK_TREE_VIEW(tree_view), column);
+
+                // Create a box for the text column header
+                GtkWidget *box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+                GtkWidget *label = gtk_label_new(filename);
+                gtk_box_append(GTK_BOX(box), label);
+                gtk_widget_show(box);
+                gtk_tree_view_column_set_widget(column, box);
+                gtk_tree_view_set_enable_tree_lines(GTK_TREE_VIEW(tree_view), TRUE);
+
                 g_signal_connect(tree_view, "row-activated", G_CALLBACK(on_row_activated), NULL);
             } else {
                 // set the column name
@@ -222,7 +247,6 @@ void save_file(GSimpleAction *action, GVariant *parameter, gpointer user_data) {
 
     // Get the contents of the buffer
     char *contents = gtk_text_buffer_get_text(buffer, &start, &end, FALSE);
-    g_print("Contents: %s\n", contents);
 
     // Get the file path from the struct
     char *filePath = tab->filePath;
