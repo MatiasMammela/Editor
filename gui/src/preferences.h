@@ -8,7 +8,7 @@ extern GtkDropDown *scheme_dropdown;
 extern GtkButton *ok_button;
 extern GtkStringList *global_theme_list;
 extern GtkDropDown *global_theme_dropdown;
-
+extern GtkSpinButton *font_size_spinbutton;
 const gchar *load_config();
 void save_config(const gchar *selectedScheme);
 void preferences_handler(GSimpleAction *action, GVariant *parameter, gpointer user_data);

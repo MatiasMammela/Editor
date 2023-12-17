@@ -10,6 +10,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
     gtk_builder_add_from_file(builder, "window.ui", NULL);
 
     window = GTK_WINDOW(gtk_builder_get_object(builder, "window"));
+    gtk_window_set_title(window, "Notepad++ mutta huonompi.");
     notebook = GTK_NOTEBOOK(gtk_builder_get_object(builder, "notebook"));
     preferences_dialog = GTK_WINDOW(gtk_builder_get_object(builder, "preferences_dialog"));
     scheme_list = GTK_STRING_LIST(gtk_builder_get_object(builder, "scheme_list"));
@@ -18,7 +19,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
     global_theme_list = GTK_STRING_LIST(gtk_builder_get_object(builder, "global_theme_list"));
     global_theme_dropdown = GTK_DROP_DOWN(gtk_builder_get_object(builder, "global_theme_dropdown"));
     tree_view = GTK_TREE_VIEW(gtk_builder_get_object(builder, "tree_view"));
-
+    font_size_spinbutton=GTK_SPIN_BUTTON(gtk_builder_get_object(builder, "font_size_spin"));
     struct fileTab *tab = NULL;
     const GActionEntry app_entries[] = {
         {"open", open_file_handler, NULL, (gpointer)tab, NULL},
@@ -27,13 +28,17 @@ static void activate(GtkApplication *app, gpointer user_data) {
         {"new", new_file, NULL, (gpointer)tab, NULL},
         {"preferences", preferences_handler, NULL, (gpointer)tab, NULL}};
 
+
+
+
     g_action_map_add_action_entries(G_ACTION_MAP(app), app_entries, G_N_ELEMENTS(app_entries), app);
 
     GMenuModel *menubar = G_MENU_MODEL(gtk_builder_get_object(builder, "menubar"));
     gtk_application_set_menubar(GTK_APPLICATION(app), menubar);
-
+    load_config();
     gtk_window_set_application(GTK_WINDOW(window), app);
     gtk_window_present(GTK_WINDOW(window));
+
 }
 
 int main(int argc, char **argv) {
@@ -43,10 +48,8 @@ int main(int argc, char **argv) {
     app = gtk_application_new("com.example.gtk4", G_APPLICATION_DEFAULT_FLAGS);
 
     g_signal_connect(app, "activate", G_CALLBACK(activate), NULL);
-    load_config();
 
     status = g_application_run(G_APPLICATION(app), argc, argv);
-
     g_object_unref(app);
 
     return status;

@@ -20,7 +20,24 @@ void populate_tree_store(GtkTreeStore *treestore, const gchar *path, GtkTreeIter
         gtk_tree_store_append(treestore, &iter, parent);
 
         GFile *file = g_file_new_for_path(full_path);
-        gtk_tree_store_set(treestore, &iter, COLUMN_FILE, file, COLUMN_NAME, filename, -1);
+
+        //if file is a directory, use the folder icon
+        if (g_file_test(full_path, G_FILE_TEST_IS_DIR)) {
+            GdkPixbuf *icon = gdk_pixbuf_new_from_file("folder.png", NULL);
+            if(!icon) {
+                g_print("Failed to load icon\n");
+            }
+            gtk_tree_store_set(treestore, &iter, COLUMN_ICON, icon, COLUMN_NAME, filename, COLUMN_FILE, file, -1);
+            g_object_unref(icon);
+        } else {
+            //GdkPixbuf *icon = get_icon_for_file(file);
+            GdkPixbuf *icon = gdk_pixbuf_new_from_file("file.png", NULL);
+            if(!icon) {
+                g_print("Failed to load icon\n");
+            }
+            gtk_tree_store_set(treestore, &iter, COLUMN_ICON, icon, COLUMN_NAME, filename, COLUMN_FILE, file, -1);
+            g_object_unref(icon);
+        }
 
         if (g_file_test(full_path, G_FILE_TEST_IS_DIR)) {
             populate_tree_store(treestore, full_path, &iter);
