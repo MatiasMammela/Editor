@@ -21,7 +21,8 @@ void new_file(GSimpleAction *action, GVariant *parameter, gpointer user_data);
 void saveAs_handler(GSimpleAction *action, GVariant *parameter, gpointer user_data);
 void save_file(GSimpleAction *action, GVariant *parameter, gpointer user_data);
 void open_file_handler(GSimpleAction *action, GVariant *parameter, gpointer user_data);
+void open_folder_handler(GSimpleAction *action, GVariant *parameter, gpointer user_data);
 void remove_tab(GtkWidget *button, gpointer data);
-
+void exit_handler(GSimpleAction *action, GVariant *parameter, gpointer user_data);
 
 #endif // TEXT_EDITOR_H

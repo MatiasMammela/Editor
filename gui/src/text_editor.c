@@ -258,3 +258,15 @@ void open_file_handler(GSimpleAction *action, GVariant *parameter, gpointer user
     gtk_window_present(dialog);
     g_signal_connect(dialog, "response", G_CALLBACK(open_file), user_data);
 }
+
+void open_folder_handler(GSimpleAction *action, GVariant *parameter, gpointer user_data) {
+    GtkWindow *dialog = GTK_WINDOW(gtk_file_chooser_dialog_new("Open File", NULL, GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER, "Cancel", GTK_RESPONSE_CANCEL, "Open", GTK_RESPONSE_ACCEPT, NULL));
+    gtk_window_set_transient_for(dialog, window);
+    gtk_window_present(dialog);
+    g_signal_connect(dialog, "response", G_CALLBACK(open_file), user_data);
+}
+
+void exit_handler(GSimpleAction *action, GVariant *parameter, gpointer user_data) {
+    gtk_window_close(window);
+}
+
