@@ -41,9 +41,12 @@ static void activate(GtkApplication *app, gpointer user_data) {
     gtk_application_set_accels_for_action(app, "app.preferences", (const gchar *[]){"<Ctrl>p", NULL});
     gtk_application_set_accels_for_action(app, "app.exit", (const gchar *[]){"<Ctrl>q", NULL});
 
-
     GMenuModel *menubar = G_MENU_MODEL(gtk_builder_get_object(builder, "menubar"));
     gtk_application_set_menubar(GTK_APPLICATION(app), menubar);
+
+    update_actions(notebook, G_ACTION_MAP(app));
+    g_signal_connect(notebook, "page-added", G_CALLBACK(update_actions_handler), app);
+    g_signal_connect(notebook, "page-removed", G_CALLBACK(update_actions_handler), app);
 
     gtk_window_set_application(GTK_WINDOW(window), app);
     gtk_window_present(GTK_WINDOW(window));

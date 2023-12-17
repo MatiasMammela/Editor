@@ -24,5 +24,8 @@ void open_file_handler(GSimpleAction *action, GVariant *parameter, gpointer user
 void open_folder_handler(GSimpleAction *action, GVariant *parameter, gpointer user_data);
 void remove_tab(GtkWidget *button, gpointer data);
 void exit_handler(GSimpleAction *action, GVariant *parameter, gpointer user_data);
+void update_actions(GtkNotebook *notebook, GActionMap *action_map);
+void update_actions_handler(GtkNotebook *notebook, GtkWidget *child, guint page_num, gpointer user_data);
+
 
 #endif // TEXT_EDITOR_H

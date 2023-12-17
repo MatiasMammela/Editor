@@ -120,10 +120,18 @@ static void open_file(GtkDialog *dialog, gint response_id, gpointer user_data) {
             // get the name of the directory
             gchar *filename = g_file_get_basename(file);
 
-            GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
-            GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes(filename, renderer, "text", COLUMN_NAME, NULL);
-            gtk_tree_view_append_column(GTK_TREE_VIEW(tree_view), column);
-            g_signal_connect(tree_view, "row-activated", G_CALLBACK(on_row_activated), NULL);
+            // use the same column if it exists
+            GtkTreeViewColumn *column = gtk_tree_view_get_column(GTK_TREE_VIEW(tree_view), 0);
+            if (column == NULL) {
+                // create a new column
+                GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
+                column = gtk_tree_view_column_new_with_attributes(filename, renderer, "text", COLUMN_NAME, NULL);
+                gtk_tree_view_append_column(GTK_TREE_VIEW(tree_view), column);
+                g_signal_connect(tree_view, "row-activated", G_CALLBACK(on_row_activated), NULL);
+            } else {
+                // set the column name
+                gtk_tree_view_column_set_title(column, filename);
+            }
         } else {
 
             // if the file is not a directory, open it
@@ -270,3 +278,15 @@ void exit_handler(GSimpleAction *action, GVariant *parameter, gpointer user_data
     gtk_window_close(window);
 }
 
+void update_actions(GtkNotebook *notebook, GActionMap *action_map) {
+    gboolean has_pages = gtk_notebook_get_n_pages(notebook) > 0;
+    GAction *save_action = g_action_map_lookup_action(action_map, "save");
+    GAction *saveas_action = g_action_map_lookup_action(action_map, "saveas");
+
+    g_simple_action_set_enabled(G_SIMPLE_ACTION(save_action), has_pages);
+    g_simple_action_set_enabled(G_SIMPLE_ACTION(saveas_action), has_pages);
+}
+
+void update_actions_handler(GtkNotebook *notebook, GtkWidget *child, guint page_num, gpointer user_data) {
+    update_actions(notebook, user_data);
+}
